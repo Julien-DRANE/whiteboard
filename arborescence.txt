@@ -1,0 +1,12 @@
+whiteboard
+├── index.html
+├── main.js
+├── modules
+│   ├── History.js
+│   ├── Shapes.js
+│   ├── Storage.js
+│   ├── TextEditor.js
+│   ├── Tools.js
+│   ├── UI.js
+│   └── Whiteboard.js
+└── style.css
