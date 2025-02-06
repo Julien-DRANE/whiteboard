@@ -36,6 +36,10 @@ function reconstructShape(shapeData) {
       );
       break;
     case "arrow":
+      // Pour reconstruire une flèche, on utilise ici ShapeArrow.fromPoints
+      // En supposant que dans les données sauvegardées, on avait conservé x,y, w, h, angle, etc.
+      // Si vous sauvegardez la flèche avec x et y correspondant au centre, vous pouvez recréer
+      // directement une nouvelle instance. Ici, nous utilisons l'ancien constructeur pour la compatibilité.
       shape = new ShapeArrow(
         shapeData.x,
         shapeData.y,
@@ -249,14 +253,11 @@ export default class Whiteboard {
       this.drawAll();
     }
     else if (this.currentTool === "arrow") {
+      // Pour l'outil flèche, on stocke le point de départ et on attend le mousemove/mouseup
       this.isDrawing = true;
       this.startX = pos.x;
       this.startY = pos.y;
-      let a = new ShapeArrow(pos.x, pos.y, 0, 0, 0, this.strokeColor, this.strokeWidth);
-      this.shapes.push(a);
-      this.selectedShape = a;
-      this.multiSelectedShapes = [];
-      this.drawAll();
+      // On n'ajoute pas encore de flèche à this.shapes
     }
     else if (this.currentTool === "text") {
       this.isDrawing = true;
@@ -368,21 +369,18 @@ export default class Whiteboard {
       e.h = Math.abs(dy);
       this.drawAll();
     }
-    if (this.isDrawing && this.currentTool === "arrow" && this.selectedShape) {
-      let dx = pos.x - this.startX;
-      let dy = pos.y - this.startY;
-      let cx = (this.startX + pos.x) / 2;
-      let cy = (this.startY + pos.y) / 2;
-      if (snapping) {
-        cx = this.snapToGrid(cx, 20);
-        cy = this.snapToGrid(cy, 20);
-      }
-      let a = this.selectedShape;
-      a.x = cx;
-      a.y = cy;
-      a.w = Math.abs(dx);
-      a.h = Math.abs(dy);
+    if (this.isDrawing && this.currentTool === "arrow") {
+      // Afficher un aperçu dynamique de la flèche
       this.drawAll();
+      let previewArrow = ShapeArrow.fromPoints(
+        this.startX,
+        this.startY,
+        pos.x,
+        pos.y,
+        this.strokeColor,
+        this.strokeWidth
+      );
+      previewArrow.draw(this.ctx);
     }
   }
 
@@ -459,6 +457,20 @@ export default class Whiteboard {
         textEditor.focus();
         setTimeout(() => { document.execCommand("selectAll", false, null); }, 0);
       }
+    }
+    // Finalisation pour l'outil flèche
+    if (this.isDrawing && this.currentTool === "arrow") {
+      let finalArrow = ShapeArrow.fromPoints(
+        this.startX,
+        this.startY,
+        pos.x,
+        pos.y,
+        this.strokeColor,
+        this.strokeWidth
+      );
+      this.shapes.push(finalArrow);
+      this.selectedShape = finalArrow;
+      this.drawAll();
     }
     this.isDrawing = false;
     this.isMoving = false;

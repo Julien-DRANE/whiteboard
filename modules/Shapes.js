@@ -117,96 +117,118 @@ export class ShapeEllipse {
   }
 }
 
-// ShapeArrow
-
+// ShapeArrow (version mise à jour)
 export class ShapeArrow {
+  /**
+   * Constructeur de ShapeArrow.
+   * @param {number} x - Coordonnée x du centre de la flèche.
+   * @param {number} y - Coordonnée y du centre de la flèche.
+   * @param {number} length - Longueur de la flèche (distance entre le début et la fin).
+   * @param {number} angle - Angle (en radians) définissant la direction.
+   * @param {string} strokeColor - Couleur de la flèche.
+   * @param {number} strokeWidth - Épaisseur de la flèche.
+   */
+  constructor(x, y, length, angle, strokeColor = "#000", strokeWidth = 2) {
+    this.type = "arrow";
+    this.x = x;             // Centre de la flèche
+    this.y = y;
+    this.length = length;   // Longueur totale de la flèche
+    this.angle = angle;     // Orientation (en radians)
+    this.strokeColor = strokeColor;
+    this.strokeWidth = strokeWidth;
+    this.headLength = 15;   // Valeur de base pour la longueur de l'entête
+    this.headAngle = Math.PI / 6; // Angle de l'entête (30°)
+  }
 
-  constructor(x, y, w, h, angle = 0, strokeColor = "#000", strokeWidth = 2) {
-  this.type = "arrow"; 
-  this.x = x; 
-  this.y = y; 
-  this.w = w; 
-  this.h = h; 
-  this.angle = angle; 
-  this.strokeColor = strokeColor;
-  this.strokeWidth = strokeWidth;
-  
+  /**
+   * Crée une flèche à partir de deux points.
+   * Calcule le centre (milieu) pour que x et y soient cohérents avec les autres formes.
+   * @param {number} x1 - Coordonnée x du point de départ.
+   * @param {number} y1 - Coordonnée y du point de départ.
+   * @param {number} x2 - Coordonnée x du point d'arrivée.
+   * @param {number} y2 - Coordonnée y du point d'arrivée.
+   * @param {string} strokeColor - Couleur de la flèche.
+   * @param {number} strokeWidth - Épaisseur de la flèche.
+   * @returns {ShapeArrow} Une nouvelle instance de ShapeArrow.
+   */
+  static fromPoints(x1, y1, x2, y2, strokeColor = "#000", strokeWidth = 2) {
+    const dx = x2 - x1;
+    const dy = y2 - y1;
+    const length = Math.sqrt(dx * dx + dy * dy);
+    const angle = Math.atan2(dy, dx);
+    // Le centre est le milieu entre (x1,y1) et (x2,y2)
+    const centerX = (x1 + x2) / 2;
+    const centerY = (y1 + y2) / 2;
+    return new ShapeArrow(centerX, centerY, length, angle, strokeColor, strokeWidth);
   }
-  
-  
+
   draw(ctx) {
-  ctx.save();
-  ctx.translate(this.x, this.y);
-  ctx.rotate(this.angle);
-  ctx.strokeStyle = this.strokeColor;
-  ctx.lineWidth = this.strokeWidth;
-  ctx.beginPath();
-  const halfW = this.w / 2;
-  ctx.moveTo(-halfW, 0);
-  ctx.lineTo(halfW, 0);
-  ctx.lineTo(halfW - 15, -10);
-  ctx.moveTo(halfW, 0);
-  ctx.lineTo(halfW - 15, 10);
-  ctx.stroke();
-  ctx.restore();
-  
+    ctx.save();
+    // Se placer au centre de la flèche
+    ctx.translate(this.x, this.y);
+    ctx.rotate(this.angle);
+    ctx.strokeStyle = this.strokeColor;
+    ctx.lineWidth = this.strokeWidth;
+    // Optionnel : ajuster les caps pour améliorer l'aspect avec des traits épais
+    ctx.lineCap = "round";
+    ctx.lineJoin = "round";
+
+    // Tracer la ligne principale de la flèche de -length/2 à +length/2
+    ctx.beginPath();
+    ctx.moveTo(-this.length / 2, 0);
+    ctx.lineTo(this.length / 2, 0);
+    ctx.stroke();
+
+    // Adapter la longueur de la tête en fonction de l'épaisseur du trait.
+    // Ici, on multiplie la longueur de base par un facteur proportionnel à strokeWidth.
+    const adaptedHeadLength = this.headLength * (this.strokeWidth / 2);
+
+    // Tracer l'entête de la flèche au bout positif (côté "fin")
+    ctx.beginPath();
+    ctx.moveTo(this.length / 2, 0);
+    ctx.lineTo(
+      this.length / 2 - adaptedHeadLength * Math.cos(this.headAngle),
+      -adaptedHeadLength * Math.sin(this.headAngle)
+    );
+    ctx.moveTo(this.length / 2, 0);
+    ctx.lineTo(
+      this.length / 2 - adaptedHeadLength * Math.cos(this.headAngle),
+      adaptedHeadLength * Math.sin(this.headAngle)
+    );
+    ctx.stroke();
+
+    ctx.restore();
   }
-  
-  
+
   contains(mx, my) {
-  
-  const { lx, ly } = this.globalToLocal(mx, my);
-  
-  const hw = this.w / 2, hh = this.h / 2 || 20;
-  
-  return (lx >= -hw && lx <= hw && ly >= -hh && ly <= hh);
-  
+    const { lx, ly } = this.globalToLocal(mx, my);
+    const tolerance = 5;
+    return lx >= -this.length / 2 && lx <= this.length / 2 && Math.abs(ly) <= tolerance;
   }
-  
-  
-  getCenter() {
-  
-  return { cx: this.x, cy: this.y };
-  
-  }
-  
-  
+
   globalToLocal(mx, my) {
-  
-  const dx = mx - this.x;
-  
-  const dy = my - this.y;
-  
-  const cos = Math.cos(-this.angle);
-  
-  const sin = Math.sin(-this.angle);
-  
-  const lx = dx * cos - dy * sin;
-  
-  const ly = dx * sin + dy * cos;
-  
-  return { lx, ly };
-  
+    const dx = mx - this.x;
+    const dy = my - this.y;
+    const cos = Math.cos(-this.angle);
+    const sin = Math.sin(-this.angle);
+    const lx = dx * cos - dy * sin;
+    const ly = dx * sin + dy * cos;
+    return { lx, ly };
   }
-  
-  
+
+  getCenter() {
+    return { cx: this.x, cy: this.y };
+  }
+
   getBoundingBox() {
-  
-  return {
-  
-  x: this.x - this.w / 2,
-  
-  y: this.y - this.h / 2,
-  
-  w: this.w,
-  
-  h: this.h
-  
-  };
-  
+    return {
+      x: this.x - this.length / 2,
+      y: this.y - this.strokeWidth - this.headLength,
+      w: this.length + this.headLength,
+      h: 2 * (this.strokeWidth + this.headLength)
+    };
   }
-  
-  }
+}
 
 // ShapePath
 export class ShapePath {
