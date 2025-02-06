@@ -413,6 +413,7 @@ export class ShapeText {
 
   /**
    * Met à jour le texte et recalcule les dimensions de la zone de texte.
+   * Cette méthode tient compte des retours à la ligne.
    * @param {string} newText - Le nouveau texte.
    * @param {CanvasRenderingContext2D} ctx - Le contexte utilisé pour mesurer le texte.
    */
@@ -420,6 +421,7 @@ export class ShapeText {
     this.text = newText;
     ctx.save();
     ctx.font = `${this.fontSize}px Arial`;
+    // Sépare le texte en lignes afin de prendre en compte les retours à la ligne
     const lines = newText.split("\n");
     let maxWidth = 0;
     for (let line of lines) {
@@ -428,9 +430,14 @@ export class ShapeText {
         maxWidth = metrics.width;
       }
     }
+    // Ajoute une marge de 10 pixels de chaque côté
     this.w = maxWidth + 10;
+    // Calcule la hauteur en fonction du nombre de lignes et d'un interligne (1.2 * fontSize)
     const lineHeight = this.fontSize * 1.2;
     this.h = lines.length * lineHeight + 10;
+    // Imposer une taille minimale pour éviter une zone trop petite
+    if (this.w < 50) this.w = 50;
+    if (this.h < 30) this.h = 30;
     ctx.restore();
   }
   

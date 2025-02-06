@@ -22,7 +22,7 @@ export default class TextEditor {
     this.editor.style.resize = "none";
     this.editor.style.boxShadow = "0 2px 5px rgba(0,0,0,0.3)";
     
-    // Autoriser les sauts de ligne : s'assurer que la touche Enter ne bloque pas le comportement par défaut.
+    // Autoriser les sauts de ligne
     this.editor.addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         // Laisser le comportement par défaut pour insérer un saut de ligne.
@@ -54,7 +54,7 @@ export default class TextEditor {
     this.editor.innerText = text;
     this.editor.style.display = "block";
     this.editor.focus();
-    // Sélectionner automatiquement tout le contenu avec l'API moderne
+    // Sélectionner automatiquement tout le contenu
     setTimeout(() => {
       const range = document.createRange();
       range.selectNodeContents(this.editor);

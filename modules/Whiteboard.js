@@ -38,8 +38,7 @@ function reconstructShape(shapeData) {
     case "arrow":
       // Pour reconstruire une flèche, on utilise ici ShapeArrow.fromPoints
       // En supposant que dans les données sauvegardées, on avait conservé x,y, w, h, angle, etc.
-      // Si vous sauvegardez la flèche avec x et y correspondant au centre, vous pouvez recréer
-      // directement une nouvelle instance. Ici, nous utilisons l'ancien constructeur pour la compatibilité.
+      // Ici, nous utilisons l'ancien constructeur pour la compatibilité.
       shape = new ShapeArrow(
         shapeData.x,
         shapeData.y,
@@ -260,9 +259,11 @@ export default class Whiteboard {
       // On n'ajoute pas encore de flèche à this.shapes
     }
     else if (this.currentTool === "text") {
+      // Commencer à définir la zone de texte par clic-glisser
       this.isDrawing = true;
       this.startX = pos.x;
       this.startY = pos.y;
+      // Créer un ShapeText initial avec w et h nuls
       let t = new ShapeText(pos.x, pos.y, 0, 0, 0, this.strokeColor, "", 24);
       this.shapes.push(t);
       this.selectedShape = t;
@@ -382,6 +383,19 @@ export default class Whiteboard {
       );
       previewArrow.draw(this.ctx);
     }
+    // Ajout du redimensionnement dynamique pour l'outil texte
+    if (this.isDrawing && this.currentTool === "text" && this.selectedShape) {
+      let dx = pos.x - this.startX;
+      let dy = pos.y - this.startY;
+      let cx = (this.startX + pos.x) / 2;
+      let cy = (this.startY + pos.y) / 2;
+      let t = this.selectedShape;
+      t.x = cx;
+      t.y = cy;
+      t.w = Math.abs(dx);
+      t.h = Math.abs(dy);
+      this.drawAll();
+    }
   }
 
   // --- Finalisation du dessin ---
@@ -442,9 +456,11 @@ export default class Whiteboard {
     if (this.isDrawing && this.currentTool === "text") {
       this.isDrawing = false;
       let t = this.selectedShape;
+      // Imposer une taille minimale à la zone de texte
       if (t.w < 50) t.w = 50;
       if (t.h < 30) t.h = 30;
       this.drawAll();
+      // Afficher l'éditeur de texte (assurez-vous qu'un élément HTML avec l'ID "textEditor" existe)
       let textEditor = document.getElementById("textEditor");
       if (textEditor) {
         textEditor.style.display = "block";
@@ -454,6 +470,8 @@ export default class Whiteboard {
         textEditor.style.height = (t.h + 20) + "px";
         textEditor.innerText = t.text || "Tapez votre texte...";
         textEditor.style.fontSize = t.fontSize + "px";
+        // Assurez-vous que les retours à la ligne sont pris en compte
+        textEditor.style.whiteSpace = "pre-wrap";
         textEditor.focus();
         setTimeout(() => { document.execCommand("selectAll", false, null); }, 0);
       }
