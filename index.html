@@ -4,62 +4,187 @@
   <meta charset="UTF-8">
   <title>Whiteboard Complet - Texte Multiligne avec TextEditor</title>
   <link rel="stylesheet" href="style.css" />
+  <style>
+    /* Exemple de styles pour la barre d'outils groupée */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f0f0;
+    }
+
+    /* Barre d'outils */
+    #toolbar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: linear-gradient(to right, #999999, #7a787e);
+      padding: 8px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+      border-top: 1px solid #007acc;
+      z-index: 999;
+    }
+
+    /* Style de base pour chaque groupe d'outils */
+    .tool-group {
+      display: flex;
+      align-items: center;
+      margin: 0 10px;
+    }
+
+    /* Séparateur visuel entre les groupes */
+    .tool-group:not(:last-child)::after {
+      content: '';
+      display: inline-block;
+      width: 1px;
+      height: 30px;
+      background: rgba(255, 255, 255, 0.3);
+      margin-left: 10px;
+    }
+
+    /* Style général pour les boutons de la toolbar */
+    #toolbar button {
+      background: #007acc;
+      color: #ffffff;
+      border: none;
+      padding: 6px 10px;
+      margin: 4px;
+      border-radius: 4px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: background 0.3s ease, transform 0.2s ease;
+      white-space: nowrap;
+    }
+    #toolbar button:hover {
+      background: #005ea0;
+      transform: scale(1.05);
+    }
+    #toolbar button:active {
+      background: #004670;
+      transform: scale(0.98);
+    }
+
+    /* Style pour les labels et inputs dans la toolbar */
+    #toolbar label {
+      margin: 4px;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+    #toolbar input[type="color"],
+    #toolbar input[type="range"] {
+      margin: 4px;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+    }
+
+    /* Canvas (zone de dessin) */
+    #whiteboard {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 80px; /* Laisser de la place pour la barre d'outils */
+      background: #ffffff;
+      border-top: 2px solid #007acc;
+    }
+
+    /* Editeur de texte */
+    #textEditor {
+      position: absolute;
+      display: none;
+      z-index: 1000;
+      outline: none;
+      border: 1px solid #00bcd4;
+      border-radius: 5px;
+      background: rgba(255, 255, 255, 0.9);
+      padding: 8px;
+      box-sizing: border-box;
+      font-size: 20px;
+      color: #000;
+      resize: both;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+    }
+  </style>
 </head>
 <body>
-
+  <!-- Barre d'outils avec groupes -->
   <div id="toolbar">
-    <button data-tool="select">Sélection</button>
-    <button data-tool="pencil">Crayon</button>
-    <button data-tool="rect">Rectangle</button>
-    <button data-tool="ellipse">Ellipse</button>
-    <button data-tool="arrow">Flèche</button>
-    <button data-tool="text">Texte</button>
-    <button data-tool="image">Image (Drop)</button>
-    <button data-tool="hand">Main</button>
-    <!-- ... dans la div #toolbar ... -->
-    <label for="zoomSlider">Zoom :</label>
-    <input type="range" id="zoomSlider" min="0.2" max="2" step="0.1" value="1">
-    <span id="zoomValue">100%</span>
+    <!-- Groupe 1 : Outils de dessin et sélection -->
+    <div class="tool-group" id="tools-group">
+      <button data-tool="select">Sélection</button>
+      <button data-tool="pencil">Crayon</button>
+      <button data-tool="rect">Rectangle</button>
+      <button data-tool="ellipse">Ellipse</button>
+      <button data-tool="arrow">Flèche</button>
+      <button data-tool="text">Texte</button>
+      <button data-tool="image">Image (Drop)</button>
+      <button data-tool="hand">Main</button>
+    </div>
 
+    <!-- Groupe 2 : Zoom -->
+    <div class="tool-group" id="zoom-group">
+      <label for="zoomSlider">Zoom :</label>
+      <input type="range" id="zoomSlider" min="0.2" max="2" step="0.1" value="1">
+      <span id="zoomValue">100%</span>
+    </div>
 
-    <label>Trait :</label>
-    <input type="color" id="strokeColorPicker" value="#000000">
+    <!-- Groupe 3 : Propriétés (couleurs, épaisseur) -->
+    <div class="tool-group" id="colors-group">
+      <label>Trait :</label>
+      <input type="color" id="strokeColorPicker" value="#000000">
+      <label>Épaisseur :</label>
+      <input type="range" id="strokeWidthPicker" min="1" max="20" value="2">
+      <label>Remplissage :</label>
+      <input type="color" id="fillColorPicker" value="#ffffcc">
+      <label>Fond :</label>
+      <input type="color" id="bgColorPicker" value="#ffffff">
+    </div>
 
-    <label>Épaisseur :</label>
-    <input type="range" id="strokeWidthPicker" min="1" max="20" value="2">
+    <!-- Groupe 4 : Actions (Undo/Redo/Snapping) -->
+    <div class="tool-group" id="actions-group">
+      <button id="btnUndo">Undo</button>
+      <button id="btnRedo">Redo</button>
+      <button id="btnSnap">Snapping ON</button>
+    </div>
 
-    <label>Remplissage :</label>
-    <input type="color" id="fillColorPicker" value="#ffffcc">
+    <!-- Groupe 5 : Navigation entre pages -->
+    <div class="tool-group" id="pages-group">
+      <button id="btnPagePrev">Page -</button>
+      <button id="btnPageNext">Page +</button>
+      <span id="pageInfo"></span>
+    </div>
 
-    <label>Fond :</label>
-    <input type="color" id="bgColorPicker" value="#ffffff">
+    <!-- Groupe 6 : Export / Import -->
+    <div class="tool-group" id="export-import-group">
+      <button id="btnExportPng">PNG</button>
+      <button id="btnExportJson">Export JSON</button>
+      <button id="btnImportJson">Import JSON</button>
+      <input type="file" id="fileImportJson" accept=".json" style="display:none">
+    </div>
 
-    <button id="btnUndo">Undo</button>
-    <button id="btnRedo">Redo</button>
-    <button id="btnSnap">Snapping ON</button>
-
-    <!-- Boutons de navigation des pages -->
-    <button id="btnPagePrev">Page -</button>
-    <button id="btnPageNext">Page +</button>
-    <span id="pageInfo"></span>
-
-    <!-- Boutons d'export/import -->
-    <button id="btnExportPng">PNG</button>
-    <button id="btnExportJson">Export JSON</button>
-    <button id="btnImportJson">Import JSON</button>
-    <input type="file" id="fileImportJson" accept=".json" style="display:none">
-
-    <!-- Boutons de réorganisation des couches -->
-    <button id="btnBringToFront">Mettre au premier plan</button>
-    <button id="btnSendToBack">Envoyer à l'arrière</button>
-    <button id="btnMoveUp">Avancer d'un cran</button>
-    <button id="btnMoveDown">Reculer d'un cran</button>
+    <!-- Groupe 7 : Réorganisation des couches -->
+    <div class="tool-group" id="layer-group">
+      <button id="btnBringToFront">Mettre au premier plan</button>
+      <button id="btnSendToBack">Envoyer à l'arrière</button>
+      <button id="btnMoveUp">Avancer d'un cran</button>
+      <button id="btnMoveDown">Reculer d'un cran</button>
+    </div>
   </div>
 
+  <!-- Zone de dessin -->
   <canvas id="whiteboard"></canvas>
 
-  <!-- Div contenteditable pour l'édition du texte -->
+  <!-- Editeur de texte -->
   <div id="textEditor" contenteditable="true"></div>
+
+  <!-- Input caché pour la sélection d'image -->
+  <input type="file" id="fileImage" accept="image/*" style="display: none;">
 
   <script type="module" src="main.js"></script>
 </body>

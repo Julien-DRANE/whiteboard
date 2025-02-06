@@ -1,104 +1,147 @@
+/* ======================== */
+/* Styles Globaux           */
+/* ======================== */
 html, body {
   margin: 0;
   padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
   font-family: 'Segoe UI', Arial, sans-serif;
-  background: #0f0f0f; /* Fond sombre pour un look futuriste */
-  color: #d6d6d6;    /* Texte gris clair pour le contraste */
+  background: #1e1e1e;  /* Fond sombre */
+  color: #ccc;
 }
 
-/* Barre d'outils placée en bas de l'écran */
+/* ======================== */
+/* Barre d'Outils           */
+/* ======================== */
 #toolbar {
   position: fixed;
   bottom: 0;
   left: 0;
   right: 0;
-  /* Utilisation d'une hauteur auto pour permettre le retour à la ligne */
-  height: auto;
-  background: linear-gradient(to right, #999999, #7a787e); /* Gradient bleu-cyan */
+  padding: 10px 20px;
+  background: #2d2d2d;  /* Fond de la toolbar */
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
   display: flex;
-  flex-wrap: wrap;       /* Permet aux éléments de passer à la ligne si besoin */
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
-  padding: 8px 20px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5); /* Ombre vers le haut */
   z-index: 999;
-  border-top: 1px solid #007acc; /* Bordure bleue sur le dessus */
-  font-size: 14px;  /* Taille de police réduite pour s'adapter */
-  color: #ffffff;
 }
 
-/* Style général pour les boutons de la toolbar */
+/* ======================== */
+/* Groupes d'Outils         */
+/* ======================== */
+.tool-group {
+  display: flex;
+  align-items: center;
+  margin: 5px 10px;
+  padding: 5px 10px;
+  border-radius: 5px;
+}
+
+/* Attribution d'une couleur de fond à chaque groupe */
+#tools-group {
+  background: #3c3f41;  /* Groupe des outils de dessin et de sélection */
+}
+#zoom-group {
+  background: #2a2d2e;  /* Groupe Zoom */
+}
+#colors-group {
+  background: #2d3e50;  /* Groupe des couleurs et options de style */
+}
+#actions-group {
+  background: #3e2723;  /* Groupe des actions (Undo/Redo/Snapping) */
+}
+#pages-group {
+  background: #283593;  /* Groupe de navigation entre pages */
+}
+#export-import-group {
+  background: #00695c;  /* Groupe export/import */
+}
+#layer-group {
+  background: #4a148c;  /* Groupe de gestion des couches */
+}
+
+/* Espacement interne pour tous les éléments des groupes */
+.tool-group > * {
+  margin: 0 5px;
+}
+
+/* ======================== */
+/* Boutons de la Toolbar    */
+/* ======================== */
 #toolbar button {
-  background: #007acc;       /* Bleu vif */
-  color: #ffffff;
+  padding: 6px 12px;
   border: none;
-  padding: 6px 10px;         /* Padding réduit */
-  margin: 4px;               /* Marge autour du bouton */
   border-radius: 4px;
-  font-size: 14px;           /* Taille de police adaptée */
+  background: #007acc;
+  color: #fff;
+  font-size: 14px;
   cursor: pointer;
   transition: background 0.3s ease, transform 0.2s ease;
-  white-space: nowrap;       /* Empêche le retour à la ligne interne au bouton */
+  white-space: nowrap;
 }
 
-/* Effet au survol */
+/* Effets sur les boutons */
 #toolbar button:hover {
   background: #005ea0;
   transform: scale(1.05);
 }
-
-/* Effet lors du clic */
 #toolbar button:active {
   background: #004670;
   transform: scale(0.98);
 }
 
-/* Style pour les labels de la toolbar */
+/* Optionnel : personnalisation des boutons selon le groupe */
+#tools-group button      { background: #607d8b; }  /* Bleu-gris */
+#zoom-group button       { background: #009688; }  /* Teal */
+#colors-group button     { background: #ff9800; }  /* Orange vif */
+#actions-group button    { background: #f44336; }  /* Rouge */
+#pages-group button      { background: #3f51b5; }  /* Indigo */
+#export-import-group button { background: #4caf50; }/* Vert */
+#layer-group button      { background: #9c27b0; }  /* Violet */
+
+/* ======================== */
+/* Labels et Inputs         */
+/* ======================== */
 #toolbar label {
-  margin: 4px;
+  color: #eee;
   font-size: 14px;
   white-space: nowrap;
 }
-
-/* Style pour les inputs (couleur, range) dans la toolbar */
 #toolbar input[type="color"],
 #toolbar input[type="range"] {
-  margin: 4px;
-  cursor: pointer;
   border: none;
+  cursor: pointer;
   background: transparent;
-  /* Vous pouvez personnaliser davantage l'apparence des inputs si besoin */
 }
 
-/* Le canvas occupe la zone au-dessus de la barre d'outils */
+/* ======================== */
+/* Canvas (Zone de Dessin)  */
+/* ======================== */
 #whiteboard {
   position: absolute;
   top: 0;
   left: 0;
   right: 0;
-  /* Ajustement de la zone pour tenir compte de la hauteur variable de la toolbar */
-  bottom: 80px;
-  background: #181818; /* Fond légèrement plus clair que le body */
-  cursor: crosshair;
+  bottom: 80px;  /* Laisser de la place pour la barre d'outils */
+  background: #ffffff;
   border-top: 2px solid #007acc;
+  cursor: crosshair;
 }
 
-/* Style pour l'éditeur de texte (TextEditor) */
+/* ======================== */
+/* Éditeur de Texte         */
+/* ======================== */
 #textEditor {
   position: absolute;
   display: none;
   z-index: 1000;
-  outline: none;
+  padding: 10px;
   border: 1px solid #00bcd4;
   border-radius: 5px;
-  background: rgba(255,255,255,0.9);
-  padding: 8px;
-  box-sizing: border-box;
-  font-size: 20px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  font-size: 16px;
   color: #000;
   resize: both;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
 }
