@@ -37,7 +37,7 @@ function reconstructShape(shapeData) {
       break;
     case "arrow":
       // Pour reconstruire une flèche, on utilise ici ShapeArrow.fromPoints
-      // En supposant que dans les données sauvegardées, on avait conservé x,y, w, h, angle, etc.
+      // En supposant que dans les données sauvegardées, on avait conservé x, y, w, h, angle, etc.
       // Ici, nous utilisons l'ancien constructeur pour la compatibilité.
       shape = new ShapeArrow(
         shapeData.x,
@@ -78,7 +78,7 @@ function reconstructShape(shapeData) {
         shapeData.w,
         shapeData.h,
         shapeData.angle,
-        shapeData.color || shapeData.strokeColor,  // selon ce que vous utilisez
+        shapeData.color || shapeData.strokeColor,
         shapeData.text,
         shapeData.fontSize
       );
@@ -114,6 +114,10 @@ export default class Whiteboard {
     this.panStartY = 0;
     this.initialPanOffsetX = 0;
     this.initialPanOffsetY = 0;
+
+    // Définir la zone de travail en unités logiques (à adapter selon vos besoins)
+    this.contentWidth = 2000;
+    this.contentHeight = 2000;
 
     // Multi-pages avec fond personnalisé
     this.pages = [{ shapes: [], bgColor: "#FFECD1" }];
@@ -277,8 +281,25 @@ export default class Whiteboard {
     if (this.isPanning) {
       const dx = pos.x - this.panStartX;
       const dy = pos.y - this.panStartY;
-      this.panOffsetX = this.initialPanOffsetX + dx;
-      this.panOffsetY = this.initialPanOffsetY + dy;
+      let newPanOffsetX = this.initialPanOffsetX + dx;
+      let newPanOffsetY = this.initialPanOffsetY + dy;
+
+      // Contrainte du panning : la vue ne doit pas sortir de la zone de travail.
+      // La zone de travail est définie par this.contentWidth et this.contentHeight en unités logiques.
+      const viewWidth = this.canvas.width / this.zoomLevel;
+      const viewHeight = this.canvas.height / this.zoomLevel;
+
+      // Calcul des limites en pixels (après zoom)
+      const minPanOffsetX = this.canvas.width - this.contentWidth * this.zoomLevel;
+      const maxPanOffsetX = 0;
+      const minPanOffsetY = this.canvas.height - this.contentHeight * this.zoomLevel;
+      const maxPanOffsetY = 0;
+
+      newPanOffsetX = Math.min(maxPanOffsetX, Math.max(minPanOffsetX, newPanOffsetX));
+      newPanOffsetY = Math.min(maxPanOffsetY, Math.max(minPanOffsetY, newPanOffsetY));
+
+      this.panOffsetX = newPanOffsetX;
+      this.panOffsetY = newPanOffsetY;
       this.drawAll();
       return;
     }
@@ -383,7 +404,7 @@ export default class Whiteboard {
       );
       previewArrow.draw(this.ctx);
     }
-    // Ajout du redimensionnement dynamique pour l'outil texte
+    // Redimensionnement dynamique pour l'outil texte
     if (this.isDrawing && this.currentTool === "text" && this.selectedShape) {
       let dx = pos.x - this.startX;
       let dy = pos.y - this.startY;
@@ -470,7 +491,6 @@ export default class Whiteboard {
         textEditor.style.height = (t.h + 20) + "px";
         textEditor.innerText = t.text || "Tapez votre texte...";
         textEditor.style.fontSize = t.fontSize + "px";
-        // Assurez-vous que les retours à la ligne sont pris en compte
         textEditor.style.whiteSpace = "pre-wrap";
         textEditor.focus();
         setTimeout(() => { document.execCommand("selectAll", false, null); }, 0);
@@ -496,6 +516,11 @@ export default class Whiteboard {
     this.isRotating = false;
     this.resizeHandleIndex = -1;
     this.tempPoints = [];
+
+    // *** Revenir automatiquement à l'outil "select" après avoir ajouté une forme ***
+    if (this.currentTool !== "select") {
+      this.setTool("select");
+    }
   }
 
   // --- Edition du texte par double-clic ---
@@ -582,26 +607,25 @@ export default class Whiteboard {
     // Effacer le canvas
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    // Dessiner le fond en tenant compte du pan et du zoom
-    this.ctx.save();
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    // Appliquer d'abord le pan, puis le zoom
-    this.ctx.translate(this.panOffsetX, this.panOffsetY);
-    this.ctx.scale(this.zoomLevel, this.zoomLevel);
+    // 1. Remplir tout le canvas (device coordinates) avec la couleur de fond
     let currentPage = this.pages[this.currentPageIndex];
     let bg = currentPage.bgColor || "#ffffff";
+    this.ctx.save();
+    this.ctx.setTransform(1, 0, 0, 1, 0, 0); // Réinitialiser la transformation
     this.ctx.fillStyle = bg;
-    // On dessine le fond en dimensions logiques
-    this.ctx.fillRect(0, 0, this.canvas.width / this.zoomLevel, this.canvas.height / this.zoomLevel);
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.restore();
 
-    // Dessiner le contenu (formes, sélections, etc.)
+    // 2. Appliquer le pan et le zoom pour dessiner le contenu
     this.ctx.save();
     this.ctx.translate(this.panOffsetX, this.panOffsetY);
     this.ctx.scale(this.zoomLevel, this.zoomLevel);
     
+    // (Optionnel : si vous souhaitez que le fond se déplace également, vous pouvez remplir ici la zone de travail,
+    //  par exemple : this.ctx.fillRect(0, 0, this.contentWidth, this.contentHeight);)
+
     // Dessiner chaque forme avec ombre
-    for (let s of this.pages[this.currentPageIndex].shapes) {
+    for (let s of currentPage.shapes) {
       this.ctx.save();
       this.ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
       this.ctx.shadowBlur = 4;
@@ -863,5 +887,10 @@ export default class Whiteboard {
       [this.shapes[index], this.shapes[index - 1]] = [this.shapes[index - 1], this.shapes[index]];
       this.drawAll();
     }
+  }
+
+  // Méthode ajoutée pour changer l'outil courant
+  setTool(tool) {
+    this.currentTool = tool;
   }
 }

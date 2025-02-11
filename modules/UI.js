@@ -5,13 +5,14 @@ export class UIManager {
     this.currentTool = "pencil";
     this.snapOn = false;
     this.toolbar = document.getElementById("toolbar");
-    this.colorPicker = document.getElementById("colorPicker");
+    // Correction : utilisation de l'ID "strokeColorPicker" pour correspondre à index.html
+    this.colorPicker = document.getElementById("strokeColorPicker");
     this.fillColorPicker = document.getElementById("fillColorPicker");
     this.fileImportJson = document.getElementById("fileImportJson");
   }
 
   init() {
-    // Toolbar events
+    // Événements sur la barre d'outils
     this.toolbar.addEventListener("click", (e) => {
       if (e.target.dataset.tool) {
         this.currentTool = e.target.dataset.tool;
@@ -38,7 +39,8 @@ export class UIManager {
 
     // Pickeur de couleur (trait)
     this.colorPicker.addEventListener("input", (e) => {
-      this.wb.color = e.target.value;
+      // Utilisation de strokeColor (ou adapter en fonction de la propriété attendue par Whiteboard)
+      this.wb.strokeColor = e.target.value;
     });
 
     // Fichier import JSON
@@ -48,23 +50,23 @@ export class UIManager {
       }
     });
 
-    // Canvas events
+    // Événements sur le canvas (en utilisant getMousePos)
     this.wb.canvas.addEventListener("mousedown", (e) => {
-      let pos = this.wb.getMouse(e);
+      let pos = this.wb.getMousePos(e);
       let isDraw = this.wb.handleMouseDown(pos, this.snapOn);
       if (!isDraw) this.history.saveState();
     });
     this.wb.canvas.addEventListener("mousemove", (e) => {
-      let pos = this.wb.getMouse(e);
+      let pos = this.wb.getMousePos(e);
       this.wb.handleMouseMove(pos, this.snapOn);
     });
     this.wb.canvas.addEventListener("mouseup", (e) => {
-      let pos = this.wb.getMouse(e);
+      let pos = this.wb.getMousePos(e);
       this.wb.handleMouseUp(pos, this.snapOn);
       this.history.saveState();
     });
 
-    // Drag & drop images
+    // Drag & drop d'images
     this.wb.canvas.addEventListener("dragover", (e) => e.preventDefault());
     this.wb.canvas.addEventListener("drop", (e) => {
       e.preventDefault();
@@ -82,7 +84,7 @@ export class UIManager {
       }
     });
 
-    // Resize
+    // Redimensionnement
     window.addEventListener("resize", () => {
       this.wb.resize();
     });
