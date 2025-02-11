@@ -5,7 +5,9 @@
   <title>Whiteboard Complet - Texte Multiligne avec TextEditor</title>
   <link rel="stylesheet" href="style.css" />
   <style>
-    /* Exemple de styles pour la barre d'outils groupée */
+    /* ======================== */
+    /* Styles de base          */
+    /* ======================== */
     body {
       margin: 0;
       padding: 0;
@@ -13,11 +15,46 @@
       background: #f0f0f0;
     }
 
-    /* Barre d'outils */
-    #toolbar {
+    /* ------------------------------ */
+    /* Barre d'outils verticale      */
+    /* (Actions, réorganisation, export/import) */
+    /* ------------------------------ */
+    #toolbarVertical {
+      position: fixed;
+      bottom: 80px; /* Laisser de la place pour la barre horizontale */
+      left: 0;
+      width: 60px;
+      background: linear-gradient(to bottom, #999999, #7a787e);
+      padding: 8px 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 2px 0 10px rgba(0, 0, 0, 0.5);
+      border-right: 1px solid #007acc;
+      z-index: 999;
+    }
+    /* Espacement spécifique pour chaque groupe de la barre verticale */
+    #toolbarVertical .tool-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 10px 0;
+    }
+    /* Réduction de la taille des boutons dans la barre verticale */
+    #toolbarVertical button {
+      font-size: 12px;
+      padding: 4px 6px;
+      margin: 2px;
+    }
+
+    /* ------------------------------ */
+    /* Barre d'outils horizontale     */
+    /* (Outils de dessin, zoom, etc.) */
+    /* ------------------------------ */
+    #toolbarHorizontal {
       position: fixed;
       bottom: 0;
-      left: 0;
+      left: 60px; /* Décalage pour la barre verticale */
       right: 0;
       background: linear-gradient(to right, #999999, #7a787e);
       padding: 8px 20px;
@@ -27,18 +64,16 @@
       justify-content: center;
       box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
       border-top: 1px solid #007acc;
-      z-index: 999;
+      z-index: 998;
     }
-
-    /* Style de base pour chaque groupe d'outils */
-    .tool-group {
+    /* Espacement pour les groupes de la barre horizontale */
+    #toolbarHorizontal .tool-group {
       display: flex;
       align-items: center;
       margin: 0 10px;
     }
-
-    /* Séparateur visuel entre les groupes */
-    .tool-group:not(:last-child)::after {
+    /* Séparateur visuel entre les groupes horizontaux */
+    #toolbarHorizontal .tool-group:not(:last-child)::after {
       content: '';
       display: inline-block;
       width: 1px;
@@ -47,8 +82,12 @@
       margin-left: 10px;
     }
 
-    /* Style général pour les boutons de la toolbar */
-    #toolbar button {
+    /* ------------------------------ */
+    /* Boutons, labels et inputs     */
+    /* ------------------------------ */
+    /* Règle commune pour les boutons dans les deux barres */
+    #toolbarVertical button,
+    #toolbarHorizontal button {
       background: #007acc;
       color: #ffffff;
       border: none;
@@ -60,41 +99,43 @@
       transition: background 0.3s ease, transform 0.2s ease;
       white-space: nowrap;
     }
-    #toolbar button:hover {
+    #toolbarVertical button:hover,
+    #toolbarHorizontal button:hover {
       background: #005ea0;
       transform: scale(1.05);
     }
-    #toolbar button:active {
+    #toolbarVertical button:active,
+    #toolbarHorizontal button:active {
       background: #004670;
       transform: scale(0.98);
     }
 
-    /* Style pour les labels et inputs dans la toolbar */
-    #toolbar label {
+    /* Labels et inputs (uniquement dans la barre horizontale) */
+    #toolbarHorizontal label {
       margin: 4px;
       font-size: 14px;
       white-space: nowrap;
     }
-    #toolbar input[type="color"],
-    #toolbar input[type="range"] {
+    #toolbarHorizontal input[type="color"],
+    #toolbarHorizontal input[type="range"] {
       margin: 4px;
       cursor: pointer;
       border: none;
       background: transparent;
     }
 
-    /* Canvas (zone de dessin) */
+    /* ------------------------------ */
+    /* Zone de dessin et éditeur    */
+    /* ------------------------------ */
     #whiteboard {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      bottom: 80px; /* Laisser de la place pour la barre d'outils */
+      bottom: 80px; /* Laisser de la place pour la barre horizontale */
       background: #ffffff;
       border-top: 2px solid #007acc;
     }
-
-    /* Editeur de texte */
     #textEditor {
       position: absolute;
       display: none;
@@ -113,8 +154,32 @@
   </style>
 </head>
 <body>
-  <!-- Barre d'outils avec groupes -->
-  <div id="toolbar">
+  <!-- Barre d'outils verticale (actions, couches, export/import) -->
+  <div id="toolbarVertical">
+    <!-- Groupe 4 : Actions (Undo, Redo, Snapping) -->
+    <div class="tool-group" id="actions-group">
+      <button id="btnUndo">Undo</button>
+      <button id="btnRedo">Redo</button>
+      <button id="btnSnap">🧲</button>
+    </div>
+    <!-- Groupe 7 : Réorganisation des couches -->
+    <div class="tool-group" id="layer-group">
+      <button id="btnBringToFront">Front</button>
+      <button id="btnSendToBack">Back</button>
+      <button id="btnMoveUp">Up</button>
+      <button id="btnMoveDown">Down</button>
+    </div>
+    <!-- Groupe Export/Import : Export PNG, Export JSON (disquette) et Import JSON -->
+    <div class="tool-group" id="export-group">
+      <button id="btnExportPng">PNG</button>
+      <button id="btnExportJson">💾</button>
+      <button id="btnImportJson">Import JSON</button>
+      <input type="file" id="fileImportJson" accept=".json" style="display:none">
+    </div>
+  </div>
+
+  <!-- Barre d'outils horizontale (dessin, zoom, propriétés, navigation) -->
+  <div id="toolbarHorizontal">
     <!-- Groupe 1 : Outils de dessin et sélection -->
     <div class="tool-group" id="tools-group">
       <button data-tool="select">Sélection</button>
@@ -146,41 +211,18 @@
       <input type="color" id="bgColorPicker" value="#ffffff">
     </div>
 
-    <!-- Groupe 4 : Actions (Undo/Redo/Snapping) -->
-    <div class="tool-group" id="actions-group">
-      <button id="btnUndo">Undo</button>
-      <button id="btnRedo">Redo</button>
-      <button id="btnSnap">Snapping ON</button>
-    </div>
-
     <!-- Groupe 5 : Navigation entre pages -->
     <div class="tool-group" id="pages-group">
       <button id="btnPagePrev">Page -</button>
       <button id="btnPageNext">Page +</button>
       <span id="pageInfo"></span>
     </div>
-
-    <!-- Groupe 6 : Export / Import -->
-    <div class="tool-group" id="export-import-group">
-      <button id="btnExportPng">PNG</button>
-      <button id="btnExportJson">Export JSON</button>
-      <button id="btnImportJson">Import JSON</button>
-      <input type="file" id="fileImportJson" accept=".json" style="display:none">
-    </div>
-
-    <!-- Groupe 7 : Réorganisation des couches -->
-    <div class="tool-group" id="layer-group">
-      <button id="btnBringToFront">Mettre au premier plan</button>
-      <button id="btnSendToBack">Envoyer à l'arrière</button>
-      <button id="btnMoveUp">Avancer d'un cran</button>
-      <button id="btnMoveDown">Reculer d'un cran</button>
-    </div>
   </div>
 
   <!-- Zone de dessin -->
   <canvas id="whiteboard"></canvas>
 
-  <!-- Editeur de texte -->
+  <!-- Éditeur de texte -->
   <div id="textEditor" contenteditable="true"></div>
 
   <!-- Input caché pour la sélection d'image -->

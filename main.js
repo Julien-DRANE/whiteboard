@@ -8,16 +8,19 @@ const history = new HistoryManager(wb);
 // Crée une instance de TextEditor sur l'élément avec l'ID "textEditor"
 const textEditor = new TextEditor("textEditor");
 
-const toolbar = document.getElementById("toolbar");
+// Références aux deux barres d’outils
+const toolbarHorizontal = document.getElementById("toolbarHorizontal");
+const toolbarVertical = document.getElementById("toolbarVertical");
+
 const strokeColorPicker = document.getElementById("strokeColorPicker");
 const strokeWidthPicker = document.getElementById("strokeWidthPicker");
-const fillColorPicker   = document.getElementById("fillColorPicker");
-const bgColorPicker     = document.getElementById("bgColorPicker");
-const fileImportJson    = document.getElementById("fileImportJson");
-const zoomSlider        = document.getElementById("zoomSlider");
-const zoomValue         = document.getElementById("zoomValue");
+const fillColorPicker = document.getElementById("fillColorPicker");
+const bgColorPicker = document.getElementById("bgColorPicker");
+const fileImportJson = document.getElementById("fileImportJson");
+const zoomSlider = document.getElementById("zoomSlider");
+const zoomValue = document.getElementById("zoomValue");
 
-// Nouvel élément pour gérer la sélection d'image par le bouton "Image (drop)"
+// Élément pour gérer la sélection d'image via le bouton "Image (Drop)"
 const fileImage = document.getElementById("fileImage");
 
 let snapping = true;
@@ -26,7 +29,7 @@ let snapping = true;
 wb.zoomLevel = parseFloat(zoomSlider.value);
 zoomValue.textContent = Math.round(wb.zoomLevel * 100) + "%";
 
-// Lors du changement du slider de zoom
+// Mise à jour du zoom lors du changement du slider
 zoomSlider.addEventListener("input", (e) => {
   const newZoom = parseFloat(e.target.value);
   wb.zoomLevel = newZoom;
@@ -34,52 +37,38 @@ zoomSlider.addEventListener("input", (e) => {
   wb.drawAll();
 });
 
-// Redéfinir getMousePos pour tenir compte du zoom et du pan
+// Redéfinition de getMousePos pour tenir compte du zoom et du pan
 wb.getMousePos = function(e) {
   const rect = this.canvas.getBoundingClientRect();
-  return { 
-    x: (e.clientX - rect.left - this.panOffsetX) / this.zoomLevel, 
-    y: (e.clientY - rect.top - this.panOffsetY) / this.zoomLevel 
+  return {
+    x: (e.clientX - rect.left - this.panOffsetX) / this.zoomLevel,
+    y: (e.clientY - rect.top - this.panOffsetY) / this.zoomLevel
   };
 };
 
+// Affichage de l'information de page
 document.getElementById("pageInfo").textContent =
   `Page ${wb.currentPageIndex + 1}/${wb.pages.length}`;
 
-// Gestion des clics sur la toolbar
-toolbar.addEventListener("click", (e) => {
-  // Si un bouton outil est cliqué, on met à jour l'outil courant.
+/* ============================================
+   Gestion des clics sur la barre horizontale
+   (Outils de dessin, zoom, navigation)
+   ============================================ */
+toolbarHorizontal.addEventListener("click", (e) => {
+  // Si un bouton outil est cliqué, on met à jour l'outil courant
   if (e.target.dataset.tool) {
     wb.currentTool = e.target.dataset.tool;
-    
-    // Si l'outil est "image", on ouvre la fenêtre de sélection de fichier.
     if (wb.currentTool === "image") {
       wb.canvas.style.cursor = "copy";
       if (fileImage) {
         fileImage.click();
       }
     } else {
-      // Pour "hand", on change le curseur en "move", sinon "crosshair" ou "default"
-      wb.canvas.style.cursor = (wb.currentTool === "hand") ? "move" :
-                               (wb.currentTool === "select") ? "default" : "crosshair";
+      wb.canvas.style.cursor =
+        (wb.currentTool === "hand") ? "move" :
+        (wb.currentTool === "select") ? "default" : "crosshair";
     }
   }
-
-  // Undo / Redo
-  if (e.target.id === "btnUndo") history.undo();
-  if (e.target.id === "btnRedo") history.redo();
-
-  // Activation/désactivation du snapping
-  if (e.target.id === "btnSnap") {
-    snapping = !snapping;
-    e.target.textContent = snapping ? "Snapping ON" : "Snapping OFF";
-  }
-
-  // Export / Import JSON et PNG
-  if (e.target.id === "btnExportPng") wb.exportPNG();
-  if (e.target.id === "btnExportJson") wb.exportJSON();
-  if (e.target.id === "btnImportJson") fileImportJson.click();
-
   // Navigation entre les pages
   if (e.target.id === "btnPagePrev") {
     wb.prevPage();
@@ -91,31 +80,55 @@ toolbar.addEventListener("click", (e) => {
     document.getElementById("pageInfo").textContent =
       `Page ${wb.currentPageIndex + 1}/${wb.pages.length}`;
   }
+});
 
-  // Réorganisation des couches
-  if (e.target.id === "btnBringToFront") {
-    if (wb.selectedShape) {
-      wb.bringToFront(wb.selectedShape);
-    }
-  }
-  if (e.target.id === "btnSendToBack") {
-    if (wb.selectedShape) {
-      wb.sendToBack(wb.selectedShape);
-    }
-  }
-  if (e.target.id === "btnMoveUp") {
-    if (wb.selectedShape) {
-      wb.moveUp(wb.selectedShape);
-    }
-  }
-  if (e.target.id === "btnMoveDown") {
-    if (wb.selectedShape) {
-      wb.moveDown(wb.selectedShape);
-    }
+/* ============================================
+   Gestion des clics sur la barre verticale
+   (Actions : Undo/Redo, snapping, réorganisation des couches, export/import)
+   ============================================ */
+toolbarVertical.addEventListener("click", (e) => {
+  const btn = e.target.closest("button");
+  if (!btn) return;
+  switch (btn.id) {
+    case "btnUndo":
+      history.undo();
+      break;
+    case "btnRedo":
+      history.redo();
+      break;
+    case "btnSnap":
+      snapping = !snapping;
+      btn.textContent = snapping ? "🧲" : "🧲 Off";
+      break;
+    case "btnBringToFront":
+      if (wb.selectedShape) wb.bringToFront(wb.selectedShape);
+      break;
+    case "btnSendToBack":
+      if (wb.selectedShape) wb.sendToBack(wb.selectedShape);
+      break;
+    case "btnMoveUp":
+      if (wb.selectedShape) wb.moveUp(wb.selectedShape);
+      break;
+    case "btnMoveDown":
+      if (wb.selectedShape) wb.moveDown(wb.selectedShape);
+      break;
+    case "btnExportPng":
+      wb.exportPNG();
+      break;
+    case "btnExportJson":
+      wb.exportJSON();
+      break;
+    case "btnImportJson":
+      fileImportJson.click();
+      break;
+    default:
+      break;
   }
 });
 
-// Gestion des changements des options graphiques
+/* ============================================
+   Gestion des changements des options graphiques
+   ============================================ */
 strokeColorPicker.addEventListener("input", (e) => {
   wb.strokeColor = e.target.value;
 });
@@ -130,7 +143,9 @@ bgColorPicker.addEventListener("input", (e) => {
   wb.drawAll();
 });
 
-// Import JSON
+/* ============================================
+   Import JSON
+   ============================================ */
 fileImportJson.addEventListener("change", (e) => {
   if (e.target.files && e.target.files[0]) {
     history.saveState();
@@ -138,12 +153,14 @@ fileImportJson.addEventListener("change", (e) => {
   }
 });
 
-// Gestion de la sélection d'image via le fichier caché
+/* ============================================
+   Gestion de la sélection d'image via le fichier caché
+   ============================================ */
 if (fileImage) {
   fileImage.addEventListener("change", (e) => {
     const file = e.target.files[0];
     if (file && file.type.startsWith("image/")) {
-      let reader = new FileReader();
+      const reader = new FileReader();
       reader.onload = (evt) => {
         history.saveState();
         wb.addImageAt(evt.target.result, 200, 200);
@@ -154,7 +171,9 @@ if (fileImage) {
   });
 }
 
-// Événements souris sur le canvas
+/* ============================================
+   Événements souris sur le canvas
+   ============================================ */
 wb.canvas.addEventListener("mousedown", (e) => {
   history.saveState();
   wb.handleMouseDown(wb.getMousePos(e), snapping);
@@ -167,14 +186,16 @@ wb.canvas.addEventListener("mouseup", (e) => {
   history.saveState();
 });
 
-// Événements tactiles sur le canvas
+/* ============================================
+   Événements tactiles sur le canvas
+   ============================================ */
 wb.canvas.addEventListener("touchstart", (e) => {
   e.preventDefault();
   const touch = e.touches[0];
   const rect = wb.canvas.getBoundingClientRect();
-  const pos = { 
-    x: (touch.clientX - rect.left - wb.panOffsetX) / wb.zoomLevel, 
-    y: (touch.clientY - rect.top - wb.panOffsetY) / wb.zoomLevel 
+  const pos = {
+    x: (touch.clientX - rect.left - wb.panOffsetX) / wb.zoomLevel,
+    y: (touch.clientY - rect.top - wb.panOffsetY) / wb.zoomLevel
   };
   history.saveState();
   wb.handleMouseDown(pos, snapping);
@@ -183,9 +204,9 @@ wb.canvas.addEventListener("touchmove", (e) => {
   e.preventDefault();
   const touch = e.touches[0];
   const rect = wb.canvas.getBoundingClientRect();
-  const pos = { 
-    x: (touch.clientX - rect.left - wb.panOffsetX) / wb.zoomLevel, 
-    y: (touch.clientY - rect.top - wb.panOffsetY) / wb.zoomLevel 
+  const pos = {
+    x: (touch.clientX - rect.left - wb.panOffsetX) / wb.zoomLevel,
+    y: (touch.clientY - rect.top - wb.panOffsetY) / wb.zoomLevel
   };
   wb.handleMouseMove(pos, snapping);
 });
@@ -196,13 +217,15 @@ wb.canvas.addEventListener("touchend", (e) => {
   history.saveState();
 });
 
-// Gestion du drag & drop pour les images sur le canvas
+/* ============================================
+   Gestion du drag & drop pour les images sur le canvas
+   ============================================ */
 wb.canvas.addEventListener("dragover", (e) => e.preventDefault());
 wb.canvas.addEventListener("drop", (e) => {
   e.preventDefault();
-  let file = e.dataTransfer.files[0];
+  const file = e.dataTransfer.files[0];
   if (file && file.type.startsWith("image/")) {
-    let reader = new FileReader();
+    const reader = new FileReader();
     reader.onload = (evt) => {
       history.saveState();
       wb.addImageAt(evt.target.result, 200, 200);
@@ -212,16 +235,23 @@ wb.canvas.addEventListener("drop", (e) => {
   }
 });
 
-// Redimensionnement du canvas
+/* ============================================
+   Redimensionnement du canvas
+   ============================================ */
 window.addEventListener("resize", () => wb.resize());
 wb.resize();
 
-// Double-clic pour éditer le texte multi-ligne
+/* ============================================
+   Double-clic pour éditer le texte multi-ligne
+   ============================================ */
 wb.canvas.addEventListener("dblclick", (e) => {
   wb.handleDoubleClick(wb.getMousePos(e), textEditor.editor);
 });
 
-// Lorsqu'on clique en dehors de l'éditeur, appliquer le texte et masquer l'éditeur
+/* ============================================
+   Application du texte et masquage de l'éditeur
+   lorsqu'on clique en dehors de celui-ci
+   ============================================ */
 document.addEventListener("mousedown", (ev) => {
   if (ev.target !== textEditor.editor) {
     if (textEditor.editor.style.display !== "none") {
