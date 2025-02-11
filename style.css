@@ -146,6 +146,32 @@ html, body {
   color: #000;
   resize: both;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-  white-space: pre-wrap; /* Ajouté pour préserver les retours à la ligne */
+  white-space: pre-wrap; /* Pour préserver les retours à la ligne */
 }
-/*Assurez-vous que cette règle CSS se trouve dans votre fichier de styles (par exemple style.css) ou dans la section <style> de votre HTML. Cela permettra à votre éditeur de texte (élément <div id="textEditor" contenteditable="true">) de conserver correctement les sauts de ligne et les espaces, ce qui est essentiel pour l'édition de texte multiligne.
+
+/* ======================== */
+/* Media Queries - Petits Écrans */
+/* ======================== */
+@media screen and (max-width: 480px) {
+  /* Réduction du padding du toolbar */
+  #toolbar {
+    padding: 5px 10px;
+  }
+  
+  /* Ajustement des boutons */
+  #toolbar button {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+  
+  /* Réduction des marges et du padding dans les groupes d’outils */
+  .tool-group {
+    margin: 3px 5px;
+    padding: 3px 5px;
+  }
+  
+  /* Ajustement de l'espace réservé au canvas */
+  #whiteboard {
+    bottom: 60px;
+  }
+}
