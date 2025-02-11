@@ -136,6 +136,7 @@
       background: #ffffff;
       border-top: 2px solid #007acc;
     }
+    /* Éditeur de texte intégré : le module TextEditor va gérer son affichage */
     #textEditor {
       position: absolute;
       display: none;
@@ -150,6 +151,7 @@
       color: #000;
       resize: both;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+      white-space: pre-wrap; /* Conserve les sauts de ligne */
     }
   </style>
 </head>
@@ -222,8 +224,8 @@
   <!-- Zone de dessin -->
   <canvas id="whiteboard"></canvas>
 
-  <!-- Éditeur de texte -->
-  <div id="textEditor" contenteditable="true"></div>
+  <!-- Éditeur de texte intégré -->
+  <div id="textEditor"></div>
 
   <!-- Input caché pour la sélection d'image -->
   <input type="file" id="fileImage" accept="image/*" style="display: none;">

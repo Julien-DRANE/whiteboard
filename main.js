@@ -1,14 +1,14 @@
 import Whiteboard from "./modules/Whiteboard.js";
 import { HistoryManager } from "./modules/History.js";
 import TextEditor from "./modules/TextEditor.js";
+import { ShapeText } from "./modules/Shapes.js";
 
+// Initialisation des modules principaux
 const wb = new Whiteboard("whiteboard");
 const history = new HistoryManager(wb);
-
-// Crée une instance de TextEditor sur l'élément avec l'ID "textEditor"
 const textEditor = new TextEditor("textEditor");
 
-// Références aux deux barres d’outils
+// Références aux barres d'outils et aux éléments UI
 const toolbarHorizontal = document.getElementById("toolbarHorizontal");
 const toolbarVertical = document.getElementById("toolbarVertical");
 
@@ -55,10 +55,36 @@ document.getElementById("pageInfo").textContent =
    (Outils de dessin, zoom, navigation)
    ============================================ */
 toolbarHorizontal.addEventListener("click", (e) => {
-  // Si un bouton outil est cliqué, on met à jour l'outil courant
   if (e.target.dataset.tool) {
     wb.currentTool = e.target.dataset.tool;
-    if (wb.currentTool === "image") {
+    if (wb.currentTool === "text") {
+      // Affiche le TextEditor quand l'outil texte est sélectionné.
+      // Les valeurs (x, y, width, height, fontSize) sont par défaut et peuvent être ajustées.
+      textEditor.show({
+        x: 100,
+        y: 100,
+        width: 400,
+        height: 200,
+        fontSize: 18,
+        text: "",
+        onValidate: (validatedText) => {
+          console.log("Texte validé :", validatedText);
+          // Crée une nouvelle forme texte à partir des paramètres du TextEditor.
+          // Ici, on calcule le centre du nouveau cadre à partir de la position et des dimensions utilisées.
+          const shapeX = 100 + 400 / 2; // par exemple
+          const shapeY = 100 + 200 / 2; // par exemple
+          // Créer l'instance de ShapeText avec le texte validé et la couleur sélectionnée (ou par défaut)
+          let newTextShape = new ShapeText(shapeX, shapeY, 0, 0, 0, strokeColorPicker.value, validatedText, 18);
+          // Utiliser la méthode setText pour recalculer la largeur et la hauteur en fonction du texte
+          newTextShape.setText(validatedText, wb.ctx);
+          // Ajouter la nouvelle forme au whiteboard
+          wb.shapes.push(newTextShape);
+          // Redessiner le whiteboard
+          wb.drawAll();
+        }
+      });
+      wb.canvas.style.cursor = "text";
+    } else if (wb.currentTool === "image") {
       wb.canvas.style.cursor = "copy";
       if (fileImage) {
         fileImage.click();
@@ -69,7 +95,6 @@ toolbarHorizontal.addEventListener("click", (e) => {
         (wb.currentTool === "select") ? "default" : "crosshair";
     }
   }
-  // Navigation entre les pages
   if (e.target.id === "btnPagePrev") {
     wb.prevPage();
     document.getElementById("pageInfo").textContent =
@@ -173,15 +198,19 @@ if (fileImage) {
 
 /* ============================================
    Événements souris sur le canvas
+   (Ignorés si le TextEditor est affiché)
    ============================================ */
 wb.canvas.addEventListener("mousedown", (e) => {
+  if (textEditor.container.style.display !== "none") return;
   history.saveState();
   wb.handleMouseDown(wb.getMousePos(e), snapping);
 });
 wb.canvas.addEventListener("mousemove", (e) => {
+  if (textEditor.container.style.display !== "none") return;
   wb.handleMouseMove(wb.getMousePos(e), snapping);
 });
 wb.canvas.addEventListener("mouseup", (e) => {
+  if (textEditor.container.style.display !== "none") return;
   wb.handleMouseUp(wb.getMousePos(e), snapping);
   history.saveState();
 });
@@ -191,6 +220,7 @@ wb.canvas.addEventListener("mouseup", (e) => {
    ============================================ */
 wb.canvas.addEventListener("touchstart", (e) => {
   e.preventDefault();
+  if (textEditor.container.style.display !== "none") return;
   const touch = e.touches[0];
   const rect = wb.canvas.getBoundingClientRect();
   const pos = {
@@ -202,6 +232,7 @@ wb.canvas.addEventListener("touchstart", (e) => {
 });
 wb.canvas.addEventListener("touchmove", (e) => {
   e.preventDefault();
+  if (textEditor.container.style.display !== "none") return;
   const touch = e.touches[0];
   const rect = wb.canvas.getBoundingClientRect();
   const pos = {
@@ -212,6 +243,7 @@ wb.canvas.addEventListener("touchmove", (e) => {
 });
 wb.canvas.addEventListener("touchend", (e) => {
   e.preventDefault();
+  if (textEditor.container.style.display !== "none") return;
   let pos = wb.selectRectCurrent || { x: 0, y: 0 };
   wb.handleMouseUp(pos, snapping);
   history.saveState();
@@ -240,22 +272,3 @@ wb.canvas.addEventListener("drop", (e) => {
    ============================================ */
 window.addEventListener("resize", () => wb.resize());
 wb.resize();
-
-/* ============================================
-   Double-clic pour éditer le texte multi-ligne
-   ============================================ */
-wb.canvas.addEventListener("dblclick", (e) => {
-  wb.handleDoubleClick(wb.getMousePos(e), textEditor.editor);
-});
-
-/* ============================================
-   Application du texte et masquage de l'éditeur
-   lorsqu'on clique en dehors de celui-ci
-   ============================================ */
-document.addEventListener("mousedown", (ev) => {
-  if (ev.target !== textEditor.editor) {
-    if (textEditor.editor.style.display !== "none") {
-      wb.applyTextEditor(textEditor.editor);
-    }
-  }
-});
