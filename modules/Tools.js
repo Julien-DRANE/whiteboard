@@ -42,7 +42,7 @@ export class PencilTool extends BaseTool {
   onMouseUp(pos, e) {
     this.isDrawing = false;
     this.wb.ctx.closePath();
-    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10); // Retour à l'outil sélection
+    //setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10); // Retour à l'outil sélection
   }
 }
 

@@ -117,7 +117,7 @@ export class ShapeEllipse {
   }
 }
 
-// ShapeArrow (version mise à jour)
+// ShapeArrow
 export class ShapeArrow {
   /**
    * Constructeur de ShapeArrow.
@@ -130,19 +130,18 @@ export class ShapeArrow {
    */
   constructor(x, y, length, angle, strokeColor = "#000", strokeWidth = 2) {
     this.type = "arrow";
-    this.x = x;             // Centre de la flèche
+    this.x = x;
     this.y = y;
-    this.length = length;   // Longueur totale de la flèche
-    this.angle = angle;     // Orientation (en radians)
+    this.length = length;
+    this.angle = angle;
     this.strokeColor = strokeColor;
     this.strokeWidth = strokeWidth;
-    this.headLength = 15;   // Valeur de base pour la longueur de l'entête
-    this.headAngle = Math.PI / 6; // Angle de l'entête (30°)
+    this.headLength = 15;
+    this.headAngle = Math.PI / 6;
   }
 
   /**
    * Crée une flèche à partir de deux points.
-   * Calcule le centre (milieu) pour que x et y soient cohérents avec les autres formes.
    * @param {number} x1 - Coordonnée x du point de départ.
    * @param {number} y1 - Coordonnée y du point de départ.
    * @param {number} x2 - Coordonnée x du point d'arrivée.
@@ -156,7 +155,6 @@ export class ShapeArrow {
     const dy = y2 - y1;
     const length = Math.sqrt(dx * dx + dy * dy);
     const angle = Math.atan2(dy, dx);
-    // Le centre est le milieu entre (x1,y1) et (x2,y2)
     const centerX = (x1 + x2) / 2;
     const centerY = (y1 + y2) / 2;
     return new ShapeArrow(centerX, centerY, length, angle, strokeColor, strokeWidth);
@@ -164,26 +162,20 @@ export class ShapeArrow {
 
   draw(ctx) {
     ctx.save();
-    // Se placer au centre de la flèche
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
     ctx.strokeStyle = this.strokeColor;
     ctx.lineWidth = this.strokeWidth;
-    // Optionnel : ajuster les caps pour améliorer l'aspect avec des traits épais
     ctx.lineCap = "round";
     ctx.lineJoin = "round";
 
-    // Tracer la ligne principale de la flèche de -length/2 à +length/2
     ctx.beginPath();
     ctx.moveTo(-this.length / 2, 0);
     ctx.lineTo(this.length / 2, 0);
     ctx.stroke();
 
-    // Adapter la longueur de la tête en fonction de l'épaisseur du trait.
-    // Ici, on multiplie la longueur de base par un facteur proportionnel à strokeWidth.
     const adaptedHeadLength = this.headLength * (this.strokeWidth / 2);
 
-    // Tracer l'entête de la flèche au bout positif (côté "fin")
     ctx.beginPath();
     ctx.moveTo(this.length / 2, 0);
     ctx.lineTo(
@@ -371,16 +363,24 @@ export class ShapeText {
     ctx.save();
     ctx.translate(this.x, this.y);
     ctx.rotate(this.angle);
-    // Afficher un placeholder si le texte est vide
+    
+    // Dessiner un cadre autour du texte
+    ctx.strokeStyle = "#000000";  // Couleur du cadre
+    ctx.lineWidth = 1;
+    ctx.strokeRect(-this.w / 2, -this.h / 2, this.w, this.h);
+
+    // Préparer le texte
     let displayText = this.text.trim() !== "" ? this.text : "Tapez votre texte...";
     ctx.fillStyle = this.text.trim() !== "" ? this.color : "#888888";
     ctx.font = `${this.fontSize}px Arial`;
     ctx.textAlign = "left";
     ctx.textBaseline = "top";
+    
+    // Séparer le texte en lignes pour gérer les retours à la ligne
     let lines = displayText.split("\n");
     let lineHeight = this.fontSize * 1.2;
-    let startX = -this.w / 2 + 5;
-    let startY = -this.h / 2 + 5;
+    let startX = -this.w / 2 + 5; // marge de 5px
+    let startY = -this.h / 2 + 5; // marge de 5px
     for (let i = 0; i < lines.length; i++) {
       ctx.fillText(lines[i], startX, startY + i * lineHeight, this.w - 10);
     }
@@ -421,7 +421,6 @@ export class ShapeText {
     this.text = newText;
     ctx.save();
     ctx.font = `${this.fontSize}px Arial`;
-    // Sépare le texte en lignes afin de prendre en compte les retours à la ligne
     const lines = newText.split("\n");
     let maxWidth = 0;
     for (let line of lines) {
@@ -430,12 +429,9 @@ export class ShapeText {
         maxWidth = metrics.width;
       }
     }
-    // Ajoute une marge de 10 pixels de chaque côté
     this.w = maxWidth + 10;
-    // Calcule la hauteur en fonction du nombre de lignes et d'un interligne (1.2 * fontSize)
     const lineHeight = this.fontSize * 1.2;
     this.h = lines.length * lineHeight + 10;
-    // Imposer une taille minimale pour éviter une zone trop petite
     if (this.w < 50) this.w = 50;
     if (this.h < 30) this.h = 30;
     ctx.restore();
@@ -450,7 +446,6 @@ export class ShapeText {
     this.setText(newText, ctx);
   }
   
-  // Méthode ajoutée pour retourner la boîte englobante du texte
   getBoundingBox() {
     return {
       x: this.x - this.w / 2,

@@ -1,7 +1,13 @@
 export class UIManager {
-  constructor(whiteboard, history) {
+  /**
+   * @param {Object} whiteboard - L'instance de Whiteboard
+   * @param {Object} history - L'instance de HistoryManager
+   * @param {Object} textEditor - L'instance du TextEditor (optionnel mais recommandé)
+   */
+  constructor(whiteboard, history, textEditor) {
     this.wb = whiteboard;
     this.history = history;
+    this.textEditor = textEditor; // référence au module TextEditor
     this.currentTool = "pencil";
     this.snapOn = false;
     // Récupération des deux barres d'outils
@@ -24,6 +30,25 @@ export class UIManager {
         // Gestion du curseur selon l'outil sélectionné
         if (this.currentTool === "image") {
           this.wb.canvas.style.cursor = "copy";
+        } else if (this.currentTool === "text") {
+          // Lorsqu'on sélectionne l'outil texte, on affiche le TextEditor
+          // (Les valeurs ici sont par défaut et peuvent être adaptées.)
+          if (this.textEditor) {
+            this.textEditor.show({
+              x: 100,         // Position horizontale par défaut
+              y: 100,         // Position verticale par défaut
+              width: 400,     // Largeur de l'éditeur
+              height: 200,    // Hauteur de l'éditeur
+              fontSize: 18,   // Taille de la police
+              text: "",       // Texte initial vide
+              onValidate: (validatedText) => {
+                console.log("Texte validé :", validatedText);
+                // Ici, vous pouvez ajouter le texte comme une nouvelle forme sur le whiteboard
+                // ou effectuer une autre action appropriée.
+              }
+            });
+            this.wb.canvas.style.cursor = "text";
+          }
         } else {
           this.wb.canvas.style.cursor =
             (this.currentTool === "hand") ? "move" :
@@ -101,7 +126,12 @@ export class UIManager {
     });
 
     // ----- Événements sur le canvas -----
+    // Avant de traiter l'événement, on vérifie si l'éditeur de texte est visible.
     this.wb.canvas.addEventListener("mousedown", (e) => {
+      if (this.textEditor && this.textEditor.editor.style.display !== "none") {
+        // Si l'éditeur est ouvert, on ignore cet événement sur le canvas.
+        return;
+      }
       const pos = this.wb.getMousePos(e);
       const isDraw = this.wb.handleMouseDown(pos, this.snapOn);
       if (!isDraw) {
@@ -109,10 +139,16 @@ export class UIManager {
       }
     });
     this.wb.canvas.addEventListener("mousemove", (e) => {
+      if (this.textEditor && this.textEditor.editor.style.display !== "none") {
+        return;
+      }
       const pos = this.wb.getMousePos(e);
       this.wb.handleMouseMove(pos, this.snapOn);
     });
     this.wb.canvas.addEventListener("mouseup", (e) => {
+      if (this.textEditor && this.textEditor.editor.style.display !== "none") {
+        return;
+      }
       const pos = this.wb.getMousePos(e);
       this.wb.handleMouseUp(pos, this.snapOn);
       this.history.saveState();
