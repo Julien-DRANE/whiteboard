@@ -73,7 +73,7 @@ html, body {
   padding: 6px 12px;
   border: none;
   border-radius: 4px;
-  background: #007acc;
+  background: #007acc; /* Couleur par défaut, si aucun groupe n'est ciblé */
   color: #fff;
   font-size: 14px;
   cursor: pointer;
@@ -91,14 +91,15 @@ html, body {
   transform: scale(0.98);
 }
 
-/* Optionnel : personnalisation des boutons selon le groupe */
-#tools-group button      { background: #607d8b; }  /* Bleu-gris */
-#zoom-group button       { background: #009688; }  /* Teal */
-#colors-group button     { background: #ff9800; }  /* Orange vif */
-#actions-group button    { background: #f44336; }  /* Rouge */
-#pages-group button      { background: #3f51b5; }  /* Indigo */
-#export-import-group button { background: #4caf50; }/* Vert */
-#layer-group button      { background: #9c27b0; }  /* Violet */
+/* Nouveau jeu de couleurs pour les boutons selon le groupe */
+/* Vous pouvez modifier ces codes couleurs pour obtenir l'effet souhaité */
+#tools-group button      { background: #42A5F5; }  /* Bleu clair */
+#zoom-group button       { background: #66BB6A; }  /* Vert moyen */
+#colors-group button     { background: #FF7043; }  /* Orange vif */
+#actions-group button    { background: #EF5350; }  /* Rouge doux */
+#pages-group button      { background: #5C6BC0; }  /* Indigo doux */
+#export-import-group button { background: #26A69A; } /* Teal frais */
+#layer-group button      { background: #AB47BC; }  /* Violet doux */
 
 /* ======================== */
 /* Labels et Inputs         */
