@@ -40,7 +40,7 @@ export class PencilTool extends BaseTool {
   onMouseUp(pos, e) {
     this.isDrawing = false;
     this.wb.ctx.closePath();
-    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10); // Retour à l'outil sélection
+    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10);
   }
 }
 
@@ -62,7 +62,7 @@ export class RectTool extends BaseTool {
   onMouseUp(pos, e) {
     this.isDrawing = false;
     this.wb.shapes.push(this.tempRect);
-    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10); // Retour à l'outil sélection
+    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10);
   }
 }
 
@@ -84,7 +84,7 @@ export class EllipseTool extends BaseTool {
   }
   onMouseUp(pos, e) {
     this.isDrawing = false;
-    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10); // Retour à l'outil sélection
+    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10);
   }
 }
 
@@ -118,9 +118,8 @@ export class ArrowTool extends BaseTool {
       this.wb.color,
       2
     );
-    // Correction : on ajoute bien la flèche finale et non une variable inexistante
     this.wb.shapes.push(finalArrow);
-    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10); // Retour à l'outil sélection
+    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10);
     this.wb.drawAll();
     setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10);
   }
@@ -128,8 +127,82 @@ export class ArrowTool extends BaseTool {
 
 export class TextTool extends BaseTool {
   onMouseDown(pos, e) {
-    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10); // Retour à l'outil sélection après ajout
+    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10);
   }
   onMouseMove(pos, e) {}
   onMouseUp(pos, e) {}
+}
+
+/* ===============================
+   Outil Gomme (EraserTool)
+   Supprime une forme si le curseur est "proche" de ses coins
+=============================== */
+export class EraserTool extends BaseTool {
+  constructor(whiteboard) {
+    super(whiteboard);
+    this.eraserRadius = 20; // Rayon d'effacement
+    this.isErasing = false;
+  }
+
+  onMouseDown(pos, e) {
+    this.isErasing = true;
+    this.erase(pos);
+  }
+
+  onMouseMove(pos, e) {
+    if (this.isErasing) {
+      this.erase(pos);
+    }
+  }
+
+  onMouseUp(pos, e) {
+    this.isErasing = false;
+  }
+
+  // Calcule les coins "rotatifs" de la forme
+  getRotatedCorners(shape) {
+    const hw = shape.w / 2;
+    const hh = shape.h / 2;
+    const localCorners = [
+      { x: -hw, y: -hh },
+      { x: hw, y: -hh },
+      { x: hw, y: hh },
+      { x: -hw, y: hh }
+    ];
+    const angle = shape.angle || 0;
+    const cos = Math.cos(angle);
+    const sin = Math.sin(angle);
+    return localCorners.map(pt => ({
+      x: shape.x + pt.x * cos - pt.y * sin,
+      y: shape.y + pt.x * sin + pt.y * cos
+    }));
+  }
+
+  erase(pos) {
+    const shapesToErase = [];
+    for (let shape of this.wb.shapes) {
+      // Si le curseur est à l'intérieur de la forme, on l'efface directement
+      if (shape.contains(pos.x, pos.y)) {
+        shapesToErase.push(shape);
+        continue;
+      }
+      // Sinon, on vérifie si le curseur est proche d'un des coins
+      const corners = this.getRotatedCorners(shape);
+      let close = corners.some(corner => {
+        const dx = pos.x - corner.x;
+        const dy = pos.y - corner.y;
+        return Math.sqrt(dx * dx + dy * dy) < this.eraserRadius;
+      });
+      if (close) {
+        shapesToErase.push(shape);
+      }
+    }
+    shapesToErase.forEach(shape => {
+      const index = this.wb.shapes.indexOf(shape);
+      if (index !== -1) {
+        this.wb.shapes.splice(index, 1);
+      }
+    });
+    this.wb.drawAll();
+  }
 }

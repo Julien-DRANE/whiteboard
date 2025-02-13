@@ -195,8 +195,14 @@ export default class Whiteboard {
 
   /* ===================================================
      Gestion des événements (mousedown/touchstart)
+     -> Si currentTool est un objet avec onMouseDown, déléguer
   ==================================================== */
   handleMouseDown(pos, snapping) {
+    if (typeof this.currentTool === "object" && typeof this.currentTool.onMouseDown === "function") {
+      this.currentTool.onMouseDown(pos);
+      return true;
+    }
+    // Sinon, le traitement classique
     if (this.currentTool === "hand") {
       this.isPanning = true;
       this.panStartX = pos.x;
@@ -282,8 +288,13 @@ export default class Whiteboard {
 
   /* ===================================================
      Mise à jour pendant le glissement (mousemove/touchmove)
+     -> Délégation si currentTool est un objet
   ==================================================== */
   handleMouseMove(pos, snapping) {
+    if (typeof this.currentTool === "object" && typeof this.currentTool.onMouseMove === "function") {
+      this.currentTool.onMouseMove(pos);
+      return;
+    }
     if (this.isPanning) {
       const dx = pos.x - this.panStartX;
       const dy = pos.y - this.panStartY;
@@ -414,8 +425,13 @@ export default class Whiteboard {
 
   /* ===================================================
      Finalisation du dessin (mouseup/touchend)
+     -> Délégation si currentTool est un objet
   ==================================================== */
   handleMouseUp(pos, snapping) {
+    if (typeof this.currentTool === "object" && typeof this.currentTool.onMouseUp === "function") {
+      this.currentTool.onMouseUp(pos);
+      return;
+    }
     if (this.isPanning) {
       this.isPanning = false;
       return;

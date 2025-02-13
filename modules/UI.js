@@ -26,33 +26,37 @@ export class UIManager {
       // Si un bouton outil est cliqué, on met à jour l'outil courant
       if (e.target.dataset.tool) {
         this.currentTool = e.target.dataset.tool;
-        this.wb.currentTool = this.currentTool;
-        // Gestion du curseur selon l'outil sélectionné
-        if (this.currentTool === "image") {
-          this.wb.canvas.style.cursor = "copy";
-        } else if (this.currentTool === "text") {
-          // Lorsqu'on sélectionne l'outil texte, on affiche le TextEditor
-          // (Les valeurs ici sont par défaut et peuvent être adaptées.)
-          if (this.textEditor) {
-            this.textEditor.show({
-              x: 100,         // Position horizontale par défaut
-              y: 100,         // Position verticale par défaut
-              width: 400,     // Largeur de l'éditeur
-              height: 200,    // Hauteur de l'éditeur
-              fontSize: 18,   // Taille de la police
-              text: "",       // Texte initial vide
-              onValidate: (validatedText) => {
-                console.log("Texte validé :", validatedText);
-                // Ici, vous pouvez ajouter le texte comme une nouvelle forme sur le whiteboard
-                // ou effectuer une autre action appropriée.
-              }
-            });
-            this.wb.canvas.style.cursor = "text";
-          }
+        // Si l'outil gomme est sélectionné, on instancie l'outil gomme
+        if (this.currentTool === "eraser") {
+          // Assurez-vous que EraserTool est importé dans main.js et accessible ici
+          this.wb.setTool(new EraserTool(this.wb));
+          this.wb.canvas.style.cursor = "pointer"; // Choix d'un curseur adapté
         } else {
-          this.wb.canvas.style.cursor =
-            (this.currentTool === "hand") ? "move" :
-            (this.currentTool === "select") ? "default" : "crosshair";
+          // Pour les autres outils, on affecte la valeur directement
+          this.wb.currentTool = this.currentTool;
+          if (this.currentTool === "image") {
+            this.wb.canvas.style.cursor = "copy";
+          } else if (this.currentTool === "text") {
+            if (this.textEditor) {
+              this.textEditor.show({
+                x: 100,
+                y: 100,
+                width: 400,
+                height: 200,
+                fontSize: 18,
+                text: "",
+                onValidate: (validatedText) => {
+                  console.log("Texte validé :", validatedText);
+                  // Ici, vous pouvez ajouter le texte comme une nouvelle forme sur le whiteboard
+                }
+              });
+              this.wb.canvas.style.cursor = "text";
+            }
+          } else {
+            this.wb.canvas.style.cursor =
+              (this.currentTool === "hand") ? "move" :
+              (this.currentTool === "select") ? "default" : "crosshair";
+          }
         }
       }
       // Navigation entre les pages
@@ -126,10 +130,8 @@ export class UIManager {
     });
 
     // ----- Événements sur le canvas -----
-    // Avant de traiter l'événement, on vérifie si l'éditeur de texte est visible.
     this.wb.canvas.addEventListener("mousedown", (e) => {
       if (this.textEditor && this.textEditor.editor.style.display !== "none") {
-        // Si l'éditeur est ouvert, on ignore cet événement sur le canvas.
         return;
       }
       const pos = this.wb.getMousePos(e);
