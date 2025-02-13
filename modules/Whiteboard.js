@@ -11,8 +11,6 @@ import {
 /* ===================================================
    Fonctions de reconstruction pour l'import JSON
 =================================================== */
-
-// Recrée une instance de forme en fonction de son type
 function reconstructShape(shapeData) {
   let shape;
   switch(shapeData.type) {
@@ -74,7 +72,6 @@ function reconstructShape(shapeData) {
       );
       break;
     case "text":
-      // La reconstruction des formes texte est conservée pour l'import/export.
       shape = new ShapeText(
         shapeData.x,
         shapeData.y,
@@ -92,7 +89,6 @@ function reconstructShape(shapeData) {
   return shape;
 }
 
-// Recrée l'ensemble des pages en reconstruisant chaque forme
 function reconstructPages(pagesData) {
   return pagesData.map(pageData => ({
     bgColor: pageData.bgColor,
@@ -108,10 +104,8 @@ export default class Whiteboard {
     this.canvas = document.getElementById(canvasId);
     this.ctx = this.canvas.getContext("2d");
 
-    // Paramètre de zoom (1 = 100%)
+    // Paramètres de zoom et de pan
     this.zoomLevel = 1;
-
-    // Paramètres de pan
     this.panOffsetX = 0;
     this.panOffsetY = 0;
     this.isPanning = false;
@@ -120,16 +114,16 @@ export default class Whiteboard {
     this.initialPanOffsetX = 0;
     this.initialPanOffsetY = 0;
 
-    // Définition de la zone de travail en unités logiques
+    // Zone de travail
     this.contentWidth = 2000;
     this.contentHeight = 2000;
 
-    // Gestion multi-pages avec fond personnalisé
+    // Gestion multi-pages
     this.pages = [{ shapes: [], bgColor: "#FFECD1" }];
     this.currentPageIndex = 0;
     this.shapes = this.pages[this.currentPageIndex].shapes;
 
-    // Propriétés de sélection et de manipulation
+    // Sélection et outils
     this.selectedShape = null;
     this.multiSelectedShapes = [];
     // Outils disponibles : "select", "hand", "pencil", "rect", "ellipse", "arrow", "text", "image"
@@ -138,7 +132,7 @@ export default class Whiteboard {
     this.strokeWidth = 2;
     this.fillColor = "#70d6ff";
 
-    // États de dessin et de transformation
+    // États de dessin et transformation
     this.isDrawing = false;
     this.startX = 0;
     this.startY = 0;
@@ -150,16 +144,16 @@ export default class Whiteboard {
     this.dragOffsetX = 0;
     this.dragOffsetY = 0;
 
-    // États pour la sélection multiple
+    // Sélection multiple
     this.isSelectingMultiple = false;
     this.selectRectStart = null;
     this.selectRectCurrent = null;
 
-    // États pour le déplacement groupé
+    // Déplacement groupé
     this.isGroupMoving = false;
     this.groupDragOffsets = [];
 
-    // Écouteur pour la suppression via Delete/Backspace
+    // Suppression via Delete/Backspace
     window.addEventListener("keydown", (e) => {
       if ((e.key === "Delete" || e.key === "Backspace") &&
           (this.selectedShape || this.multiSelectedShapes.length)) {
@@ -178,18 +172,26 @@ export default class Whiteboard {
   }
 
   /* ===================================================
-     Récupération de la position de la souris
+     Récupération de la position (souris ou tactile)
   ==================================================== */
   getMousePos(e) {
     const rect = this.canvas.getBoundingClientRect();
+    let clientX, clientY;
+    if (e.touches && e.touches.length > 0) {
+      clientX = e.touches[0].clientX;
+      clientY = e.touches[0].clientY;
+    } else {
+      clientX = e.clientX;
+      clientY = e.clientY;
+    }
     return {
-      x: (e.clientX - rect.left - this.panOffsetX) / this.zoomLevel,
-      y: (e.clientY - rect.top - this.panOffsetY) / this.zoomLevel
+      x: (clientX - rect.left - this.panOffsetX) / this.zoomLevel,
+      y: (clientY - rect.top - this.panOffsetY) / this.zoomLevel
     };
   }
 
   /* ===================================================
-     Gestion des événements de clic (sélection, création, pan)
+     Gestion des événements (mousedown/touchstart)
   ==================================================== */
   handleMouseDown(pos, snapping) {
     if (this.currentTool === "hand") {
@@ -204,9 +206,8 @@ export default class Whiteboard {
       if (this.selectedShape) {
         let idx = this.getHandleIndexAtPos(pos.x, pos.y, this.selectedShape);
         if (idx >= 0) {
-          if (idx === 4) {
-            this.isRotating = true;
-          } else {
+          if (idx === 4) this.isRotating = true;
+          else {
             this.isResizing = true;
             this.resizeHandleIndex = idx;
           }
@@ -273,11 +274,11 @@ export default class Whiteboard {
       this.startX = pos.x;
       this.startY = pos.y;
     }
-    // La création automatique de texte par clic-glisser a été supprimée.
+    // La création de texte est gérée ailleurs.
   }
 
   /* ===================================================
-     Mise à jour pendant le glissement
+     Mise à jour pendant le glissement (mousemove/touchmove)
   ==================================================== */
   handleMouseMove(pos, snapping) {
     if (this.isPanning) {
@@ -317,8 +318,7 @@ export default class Whiteboard {
     }
     if (this.isRotating && this.selectedShape) {
       let { cx, cy } = this.selectedShape.getCenter();
-      let angle = Math.atan2(pos.y - cy, pos.x - cx);
-      this.selectedShape.angle = angle;
+      this.selectedShape.angle = Math.atan2(pos.y - cy, pos.x - cx);
       this.drawAll();
       return;
     }
@@ -396,8 +396,6 @@ export default class Whiteboard {
       previewArrow.draw(this.ctx);
     }
     if (this.isDrawing && this.currentTool === "text" && this.selectedShape) {
-      // L'ancienne logique de mise à jour par clic-glisser est conservée ici mais non utilisée,
-      // car l'édition se fait via le TextEditor.
       let dx = pos.x - this.startX;
       let dy = pos.y - this.startY;
       let cx = (this.startX + pos.x) / 2;
@@ -412,7 +410,7 @@ export default class Whiteboard {
   }
 
   /* ===================================================
-     Finalisation du dessin (mouseup)
+     Finalisation du dessin (mouseup/touchend)
   ==================================================== */
   handleMouseUp(pos, snapping) {
     if (this.isPanning) {
@@ -468,7 +466,6 @@ export default class Whiteboard {
       this.selectedShape = path;
     }
     if (this.isDrawing && this.currentTool === "text") {
-      // Finalisation de l'ancienne logique de texte (non utilisée)
       this.isDrawing = false;
       let t = this.selectedShape;
       if (t.w < 50) t.w = 50;
@@ -500,17 +497,18 @@ export default class Whiteboard {
   }
 
   /* ===================================================
-     Réorganisation et snapping
+     Snapping : alignement sur une grille
   ==================================================== */
   snapToGrid(value, gridSize = 20) {
     return Math.round(value / gridSize) * gridSize;
   }
 
+  /* ===================================================
+     Recherche de la forme au-dessus (sélection)
+  ==================================================== */
   findTopShapeAt(mx, my) {
     for (let i = this.shapes.length - 1; i >= 0; i--) {
-      if (this.shapes[i].contains(mx, my)) {
-        return this.shapes[i];
-      }
+      if (this.shapes[i].contains(mx, my)) return this.shapes[i];
     }
     return null;
   }
@@ -520,7 +518,7 @@ export default class Whiteboard {
   ==================================================== */
   drawAll() {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    // Remplissage du canvas avec la couleur de fond
+    // 1. Fond du canvas
     let currentPage = this.pages[this.currentPageIndex];
     let bg = currentPage.bgColor || "#ffffff";
     this.ctx.save();
@@ -528,7 +526,7 @@ export default class Whiteboard {
     this.ctx.fillStyle = bg;
     this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
     this.ctx.restore();
-    // Application du pan et du zoom
+    // 2. Application du pan et zoom
     this.ctx.save();
     this.ctx.translate(this.panOffsetX, this.panOffsetY);
     this.ctx.scale(this.zoomLevel, this.zoomLevel);
@@ -541,9 +539,7 @@ export default class Whiteboard {
       s.draw(this.ctx);
       this.ctx.restore();
     }
-    if (this.selectedShape) {
-      this.drawSelectionOutline(this.selectedShape);
-    }
+    if (this.selectedShape) this.drawSelectionOutline(this.selectedShape);
     if (this.multiSelectedShapes.length) {
       for (let s of this.multiSelectedShapes) {
         this.drawSelectionOutline(s, "#00ff00");
@@ -649,11 +645,9 @@ export default class Whiteboard {
     shape.w = newW;
     shape.h = newH;
     if (shape.type === "text") {
-      // Pour les formes texte, recalculer la taille en tenant compte des sauts de ligne
       let ratio = Math.min(rx, ry);
       if (!isFinite(ratio) || ratio <= 0) ratio = 1;
       shape.fontSize *= ratio;
-      // Utiliser la méthode setText pour recalculer largeur et hauteur correctement
       shape.setText(shape.text, this.ctx);
     }
     if (shape.type === "path") {
@@ -661,35 +655,29 @@ export default class Whiteboard {
     }
     let cx = left + newW / 2, cy = top + newH / 2;
     let cos = Math.cos(shape.angle), sin = Math.sin(shape.angle);
-    let gx = shape.x + (cx * cos - cy * sin);
-    let gy = shape.y + (cx * sin + cy * cos);
-    shape.x = gx;
-    shape.y = gy;
+    shape.x = shape.x + (cx * cos - cy * sin);
+    shape.y = shape.y + (cx * sin + cy * cos);
   }
-  
+
   /* ===================================================
      Suppression de la forme sélectionnée
   ==================================================== */
   deleteSelected() {
     if (this.selectedShape) {
       let i = this.shapes.indexOf(this.selectedShape);
-      if (i >= 0) {
-        this.shapes.splice(i, 1);
-      }
+      if (i >= 0) this.shapes.splice(i, 1);
       this.selectedShape = null;
     }
     if (this.multiSelectedShapes.length) {
-      for (let shape of this.multiSelectedShapes) {
+      this.multiSelectedShapes.forEach(shape => {
         let index = this.shapes.indexOf(shape);
-        if (index >= 0) {
-          this.shapes.splice(index, 1);
-        }
-      }
+        if (index >= 0) this.shapes.splice(index, 1);
+      });
       this.multiSelectedShapes = [];
     }
     this.drawAll();
   }
-  
+
   /* ===================================================
      Export en PNG
   ==================================================== */
@@ -700,7 +688,7 @@ export default class Whiteboard {
     a.download = "whiteboard.png";
     a.click();
   }
-  
+
   /* ===================================================
      Export en JSON
   ==================================================== */
@@ -714,7 +702,7 @@ export default class Whiteboard {
     a.click();
     URL.revokeObjectURL(url);
   }
-  
+
   /* ===================================================
      Import JSON
   ==================================================== */
@@ -734,7 +722,7 @@ export default class Whiteboard {
     };
     reader.readAsText(file);
   }
-  
+
   /* ===================================================
      Ajout d'une image
   ==================================================== */
@@ -745,7 +733,7 @@ export default class Whiteboard {
     this.multiSelectedShapes = [];
     this.drawAll();
   }
-  
+
   /* ===================================================
      Gestion des pages
   ==================================================== */
@@ -761,7 +749,7 @@ export default class Whiteboard {
     this.multiSelectedShapes = [];
     this.drawAll();
   }
-  
+
   prevPage() {
     if (this.currentPageIndex > 0) {
       this.currentPageIndex--;
@@ -771,7 +759,7 @@ export default class Whiteboard {
       this.drawAll();
     }
   }
-  
+
   /* ===================================================
      Réorganisation des couches
   ==================================================== */
@@ -783,7 +771,7 @@ export default class Whiteboard {
       this.drawAll();
     }
   }
-  
+
   sendToBack(shape) {
     let index = this.shapes.indexOf(shape);
     if (index > -1) {
@@ -792,7 +780,7 @@ export default class Whiteboard {
       this.drawAll();
     }
   }
-  
+
   moveUp(shape) {
     let index = this.shapes.indexOf(shape);
     if (index > -1 && index < this.shapes.length - 1) {
@@ -800,7 +788,7 @@ export default class Whiteboard {
       this.drawAll();
     }
   }
-  
+
   moveDown(shape) {
     let index = this.shapes.indexOf(shape);
     if (index > 0) {
@@ -808,457 +796,8 @@ export default class Whiteboard {
       this.drawAll();
     }
   }
-  
+
   setTool(tool) {
     this.currentTool = tool;
-  }
-  
-  /* ===================================================
-     Snapping : alignement sur une grille
-  ==================================================== */
-  snapToGrid(value, gridSize = 20) {
-    return Math.round(value / gridSize) * gridSize;
-  }
-  
-  /* ===================================================
-     Recherche de la forme au-dessus (pour la sélection)
-  ==================================================== */
-  findTopShapeAt(mx, my) {
-    for (let i = this.shapes.length - 1; i >= 0; i--) {
-      if (this.shapes[i].contains(mx, my)) {
-        return this.shapes[i];
-      }
-    }
-    return null;
-  }
-  
-  /* ===================================================
-     Redessin complet du canvas (avec zoom et pan)
-  ==================================================== */
-  drawAll() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    // 1. Remplir le canvas avec la couleur de fond
-    let currentPage = this.pages[this.currentPageIndex];
-    let bg = currentPage.bgColor || "#ffffff";
-    this.ctx.save();
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.ctx.fillStyle = bg;
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.restore();
-    // 2. Appliquer pan et zoom
-    this.ctx.save();
-    this.ctx.translate(this.panOffsetX, this.panOffsetY);
-    this.ctx.scale(this.zoomLevel, this.zoomLevel);
-    for (let s of currentPage.shapes) {
-      this.ctx.save();
-      this.ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
-      this.ctx.shadowBlur = 4;
-      this.ctx.shadowOffsetX = 2;
-      this.ctx.shadowOffsetY = 2;
-      s.draw(this.ctx);
-      this.ctx.restore();
-    }
-    if (this.selectedShape) {
-      this.drawSelectionOutline(this.selectedShape);
-    }
-    if (this.multiSelectedShapes.length) {
-      for (let s of this.multiSelectedShapes) {
-        this.drawSelectionOutline(s, "#00ff00");
-      }
-    }
-    if (this.isSelectingMultiple && this.selectRectStart && this.selectRectCurrent) {
-      this.ctx.save();
-      this.ctx.strokeStyle = "rgba(0,200,200,0.8)";
-      this.ctx.lineWidth = 2;
-      this.ctx.setLineDash([5, 3]);
-      const x = Math.min(this.selectRectStart.x, this.selectRectCurrent.x);
-      const y = Math.min(this.selectRectStart.y, this.selectRectCurrent.y);
-      const w = Math.abs(this.selectRectStart.x - this.selectRectCurrent.x);
-      const h = Math.abs(this.selectRectStart.y - this.selectRectCurrent.y);
-      this.ctx.strokeRect(x, y, w, h);
-      this.ctx.restore();
-    }
-    this.ctx.restore();
-  }
-  
-  /* ===================================================
-     Affichage du cadre de sélection et des poignées
-  ==================================================== */
-  drawSelectionOutline(shape, outlineColor = "#ff0000") {
-    this.ctx.save();
-    this.ctx.translate(shape.x, shape.y);
-    this.ctx.rotate(shape.angle || 0);
-    this.ctx.setLineDash([4, 2]);
-    this.ctx.strokeStyle = outlineColor;
-    this.ctx.lineWidth = 3;
-    this.ctx.strokeRect(-shape.w / 2, -shape.h / 2, shape.w, shape.h);
-    const handleSize = 8;
-    const halfW = shape.w / 2;
-    const halfH = shape.h / 2;
-    const handles = [
-      { x: -halfW, y: -halfH },
-      { x: halfW, y: -halfH },
-      { x: -halfW, y: halfH },
-      { x: halfW, y: halfH }
-    ];
-    this.ctx.fillStyle = "#ffffff";
-    for (let h of handles) {
-      this.ctx.fillRect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
-      this.ctx.strokeStyle = "#000000";
-      this.ctx.lineWidth = 1;
-      this.ctx.strokeRect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
-    }
-    const rotationHandleY = -halfH - 20;
-    this.ctx.beginPath();
-    this.ctx.arc(0, rotationHandleY, 6, 0, 2 * Math.PI);
-    this.ctx.fillStyle = "#ffffff";
-    this.ctx.fill();
-    this.ctx.strokeStyle = "#000000";
-    this.ctx.lineWidth = 1;
-    this.ctx.stroke();
-    this.ctx.restore();
-  }
-  
-  /* ===================================================
-     Détection des poignées sur une forme donnée
-  ==================================================== */
-  getHandleIndexAtPos(mx, my, shape) {
-    let { lx, ly } = shape.globalToLocal(mx, my);
-    const toleranceCorner = 10;
-    const toleranceRotation = 12;
-    let hw = shape.w / 2, hh = shape.h / 2;
-    let corners = [
-      { x: -hw, y: -hh },
-      { x: hw, y: -hh },
-      { x: -hw, y: hh },
-      { x: hw, y: hh }
-    ];
-    let rotationHandle = { x: 0, y: -hh - 20 };
-    for (let i = 0; i < corners.length; i++) {
-      if (Math.abs(lx - corners[i].x) < toleranceCorner &&
-          Math.abs(ly - corners[i].y) < toleranceCorner) {
-        return i;
-      }
-    }
-    let dx = lx - rotationHandle.x, dy = ly - rotationHandle.y;
-    if (Math.sqrt(dx * dx + dy * dy) < toleranceRotation) return 4;
-    return -1;
-  }
-  
-  /* ===================================================
-     Redimensionnement d'une forme
-  ==================================================== */
-  resizeShape(shape, mx, my) {
-    let { lx, ly } = shape.globalToLocal(mx, my);
-    let hw = shape.w / 2, hh = shape.h / 2;
-    let left = -hw, right = hw, top = -hh, bottom = hh;
-    switch (this.resizeHandleIndex) {
-      case 0: left = lx; top = ly; break;
-      case 1: right = lx; top = ly; break;
-      case 2: left = lx; bottom = ly; break;
-      case 3: right = lx; bottom = ly; break;
-    }
-    if (left > right) [left, right] = [right, left];
-    if (top > bottom) [top, bottom] = [bottom, top];
-    let newW = right - left, newH = bottom - top;
-    let oldW = shape.w, oldH = shape.h;
-    let rx = newW / oldW, ry = newH / oldH;
-    shape.w = newW;
-    shape.h = newH;
-    if (shape.type === "text") {
-      // Pour les formes texte, recalculer en tenant compte des retours à la ligne.
-      let ratio = Math.min(rx, ry);
-      if (!isFinite(ratio) || ratio <= 0) ratio = 1;
-      shape.fontSize *= ratio;
-      // Utiliser setText pour recalculer correctement les dimensions
-      shape.setText(shape.text, this.ctx);
-    }
-    if (shape.type === "path") {
-      shape.scalePoints(rx, ry);
-    }
-    let cx = left + newW / 2, cy = top + newH / 2;
-    let cos = Math.cos(shape.angle), sin = Math.sin(shape.angle);
-    let gx = shape.x + (cx * cos - cy * sin);
-    let gy = shape.y + (cx * sin + cy * cos);
-    shape.x = gx;
-    shape.y = gy;
-  }
-  
-  /* ===================================================
-     Suppression de la forme sélectionnée
-  ==================================================== */
-  deleteSelected() {
-    if (this.selectedShape) {
-      let i = this.shapes.indexOf(this.selectedShape);
-      if (i >= 0) {
-        this.shapes.splice(i, 1);
-      }
-      this.selectedShape = null;
-    }
-    if (this.multiSelectedShapes.length) {
-      for (let shape of this.multiSelectedShapes) {
-        let index = this.shapes.indexOf(shape);
-        if (index >= 0) {
-          this.shapes.splice(index, 1);
-        }
-      }
-      this.multiSelectedShapes = [];
-    }
-    this.drawAll();
-  }
-  
-  /* ===================================================
-     Export en PNG
-  ==================================================== */
-  exportPNG() {
-    let data = this.canvas.toDataURL("image/png");
-    let a = document.createElement("a");
-    a.href = data;
-    a.download = "whiteboard.png";
-    a.click();
-  }
-  
-  /* ===================================================
-     Export en JSON
-  ==================================================== */
-  exportJSON() {
-    let data = JSON.stringify(this.pages);
-    let blob = new Blob([data], { type: "application/json" });
-    let url = URL.createObjectURL(blob);
-    let a = document.createElement("a");
-    a.href = url;
-    a.download = "whiteboard.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-  
-  /* ===================================================
-     Import JSON
-  ==================================================== */
-  importJSON(file) {
-    let reader = new FileReader();
-    reader.onload = (e) => {
-      let arr = JSON.parse(e.target.result);
-      this.pages = reconstructPages(arr);
-      if (!Array.isArray(this.pages) || !this.pages.length) {
-        this.pages = [{ shapes: [], bgColor: "#ffffff" }];
-      }
-      this.currentPageIndex = 0;
-      this.shapes = this.pages[this.currentPageIndex].shapes;
-      this.selectedShape = null;
-      this.multiSelectedShapes = [];
-      this.drawAll();
-    };
-    reader.readAsText(file);
-  }
-  
-  /* ===================================================
-     Ajout d'une image
-  ==================================================== */
-  addImageAt(dataURL, x, y) {
-    let img = new ShapeImage(x, y, 200, 150, 0, dataURL);
-    this.shapes.push(img);
-    this.selectedShape = img;
-    this.multiSelectedShapes = [];
-    this.drawAll();
-  }
-  
-  /* ===================================================
-     Gestion des pages
-  ==================================================== */
-  nextPage() {
-    if (this.currentPageIndex < this.pages.length - 1) {
-      this.currentPageIndex++;
-    } else {
-      this.pages.push({ shapes: [], bgColor: "#ffffff" });
-      this.currentPageIndex = this.pages.length - 1;
-    }
-    this.shapes = this.pages[this.currentPageIndex].shapes;
-    this.selectedShape = null;
-    this.multiSelectedShapes = [];
-    this.drawAll();
-  }
-  
-  prevPage() {
-    if (this.currentPageIndex > 0) {
-      this.currentPageIndex--;
-      this.shapes = this.pages[this.currentPageIndex].shapes;
-      this.selectedShape = null;
-      this.multiSelectedShapes = [];
-      this.drawAll();
-    }
-  }
-  
-  /* ===================================================
-     Réorganisation des couches
-  ==================================================== */
-  bringToFront(shape) {
-    let index = this.shapes.indexOf(shape);
-    if (index > -1) {
-      this.shapes.splice(index, 1);
-      this.shapes.push(shape);
-      this.drawAll();
-    }
-  }
-  
-  sendToBack(shape) {
-    let index = this.shapes.indexOf(shape);
-    if (index > -1) {
-      this.shapes.splice(index, 1);
-      this.shapes.unshift(shape);
-      this.drawAll();
-    }
-  }
-  
-  moveUp(shape) {
-    let index = this.shapes.indexOf(shape);
-    if (index > -1 && index < this.shapes.length - 1) {
-      [this.shapes[index], this.shapes[index + 1]] = [this.shapes[index + 1], this.shapes[index]];
-      this.drawAll();
-    }
-  }
-  
-  moveDown(shape) {
-    let index = this.shapes.indexOf(shape);
-    if (index > 0) {
-      [this.shapes[index], this.shapes[index - 1]] = [this.shapes[index - 1], this.shapes[index]];
-      this.drawAll();
-    }
-  }
-  
-  setTool(tool) {
-    this.currentTool = tool;
-  }
-  
-  /* ===================================================
-     Snapping : alignement sur une grille
-  ==================================================== */
-  snapToGrid(value, gridSize = 20) {
-    return Math.round(value / gridSize) * gridSize;
-  }
-  
-  /* ===================================================
-     Recherche de la forme au-dessus (pour la sélection)
-  ==================================================== */
-  findTopShapeAt(mx, my) {
-    for (let i = this.shapes.length - 1; i >= 0; i--) {
-      if (this.shapes[i].contains(mx, my)) {
-        return this.shapes[i];
-      }
-    }
-    return null;
-  }
-  
-  /* ===================================================
-     Redessin complet du canvas (avec zoom et pan)
-  ==================================================== */
-  drawAll() {
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-    // 1. Remplir le canvas avec la couleur de fond
-    let currentPage = this.pages[this.currentPageIndex];
-    let bg = currentPage.bgColor || "#ffffff";
-    this.ctx.save();
-    this.ctx.setTransform(1, 0, 0, 1, 0, 0);
-    this.ctx.fillStyle = bg;
-    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    this.ctx.restore();
-    // 2. Appliquer pan et zoom
-    this.ctx.save();
-    this.ctx.translate(this.panOffsetX, this.panOffsetY);
-    this.ctx.scale(this.zoomLevel, this.zoomLevel);
-    for (let s of currentPage.shapes) {
-      this.ctx.save();
-      this.ctx.shadowColor = "rgba(0, 0, 0, 0.3)";
-      this.ctx.shadowBlur = 4;
-      this.ctx.shadowOffsetX = 2;
-      this.ctx.shadowOffsetY = 2;
-      s.draw(this.ctx);
-      this.ctx.restore();
-    }
-    if (this.selectedShape) {
-      this.drawSelectionOutline(this.selectedShape);
-    }
-    if (this.multiSelectedShapes.length) {
-      for (let s of this.multiSelectedShapes) {
-        this.drawSelectionOutline(s, "#00ff00");
-      }
-    }
-    if (this.isSelectingMultiple && this.selectRectStart && this.selectRectCurrent) {
-      this.ctx.save();
-      this.ctx.strokeStyle = "rgba(0,200,200,0.8)";
-      this.ctx.lineWidth = 2;
-      this.ctx.setLineDash([5, 3]);
-      const x = Math.min(this.selectRectStart.x, this.selectRectCurrent.x);
-      const y = Math.min(this.selectRectStart.y, this.selectRectCurrent.y);
-      const w = Math.abs(this.selectRectStart.x - this.selectRectCurrent.x);
-      const h = Math.abs(this.selectRectStart.y - this.selectRectCurrent.y);
-      this.ctx.strokeRect(x, y, w, h);
-      this.ctx.restore();
-    }
-    this.ctx.restore();
-  }
-  
-  /* ===================================================
-     Affichage du cadre de sélection et des poignées
-  ==================================================== */
-  drawSelectionOutline(shape, outlineColor = "#ff0000") {
-    this.ctx.save();
-    this.ctx.translate(shape.x, shape.y);
-    this.ctx.rotate(shape.angle || 0);
-    this.ctx.setLineDash([4, 2]);
-    this.ctx.strokeStyle = outlineColor;
-    this.ctx.lineWidth = 3;
-    this.ctx.strokeRect(-shape.w / 2, -shape.h / 2, shape.w, shape.h);
-    const handleSize = 8;
-    const halfW = shape.w / 2;
-    const halfH = shape.h / 2;
-    const handles = [
-      { x: -halfW, y: -halfH },
-      { x: halfW, y: -halfH },
-      { x: -halfW, y: halfH },
-      { x: halfW, y: halfH }
-    ];
-    this.ctx.fillStyle = "#ffffff";
-    for (let h of handles) {
-      this.ctx.fillRect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
-      this.ctx.strokeStyle = "#000000";
-      this.ctx.lineWidth = 1;
-      this.ctx.strokeRect(h.x - handleSize / 2, h.y - handleSize / 2, handleSize, handleSize);
-    }
-    const rotationHandleY = -halfH - 20;
-    this.ctx.beginPath();
-    this.ctx.arc(0, rotationHandleY, 6, 0, 2 * Math.PI);
-    this.ctx.fillStyle = "#ffffff";
-    this.ctx.fill();
-    this.ctx.strokeStyle = "#000000";
-    this.ctx.lineWidth = 1;
-    this.ctx.stroke();
-    this.ctx.restore();
-  }
-  
-  /* ===================================================
-     Détection des poignées sur une forme donnée
-  ==================================================== */
-  getHandleIndexAtPos(mx, my, shape) {
-    let { lx, ly } = shape.globalToLocal(mx, my);
-    const toleranceCorner = 10;
-    const toleranceRotation = 12;
-    let hw = shape.w / 2, hh = shape.h / 2;
-    let corners = [
-      { x: -hw, y: -hh },
-      { x: hw, y: -hh },
-      { x: -hw, y: hh },
-      { x: hw, y: hh }
-    ];
-    let rotationHandle = { x: 0, y: -hh - 20 };
-    for (let i = 0; i < corners.length; i++) {
-      if (Math.abs(lx - corners[i].x) < toleranceCorner &&
-          Math.abs(ly - corners[i].y) < toleranceCorner) {
-        return i;
-      }
-    }
-    let dx = lx - rotationHandle.x, dy = ly - rotationHandle.y;
-    if (Math.sqrt(dx * dx + dy * dy) < toleranceRotation) return 4;
-    return -1;
   }
 }
