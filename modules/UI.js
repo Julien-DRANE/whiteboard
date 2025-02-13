@@ -23,12 +23,16 @@ export class UIManager {
     // ----- Gestion des clics sur la barre horizontale -----
     // (Outils de dessin, zoom, navigation, propriétés, etc.)
     this.toolbarHorizontal.addEventListener("click", (e) => {
-      // Si un bouton outil est cliqué, on met à jour l'outil courant
       if (e.target.dataset.tool) {
+        // Retirer la classe active de tous les boutons outils
+        const toolButtons = this.toolbarHorizontal.querySelectorAll("button[data-tool]");
+        toolButtons.forEach(btn => btn.classList.remove("active"));
+        // Ajouter la classe active au bouton cliqué
+        e.target.classList.add("active");
+
         this.currentTool = e.target.dataset.tool;
-        // Si l'outil gomme est sélectionné, on instancie l'outil gomme
         if (this.currentTool === "eraser") {
-          // Assurez-vous que EraserTool est importé dans main.js et accessible ici
+          // Instancier l'outil gomme
           this.wb.setTool(new EraserTool(this.wb));
           this.wb.canvas.style.cursor = "pointer"; // Choix d'un curseur adapté
         } else {
@@ -71,49 +75,50 @@ export class UIManager {
     // ----- Gestion des clics sur la barre verticale -----
     // (Actions (Undo/Redo), snapping, réorganisation des couches, export/import)
     this.toolbarVertical.addEventListener("click", (e) => {
-      // Undo / Redo
-      if (e.target.id === "btnUndo") {
-        this.history.undo();
-      }
-      if (e.target.id === "btnRedo") {
-        this.history.redo();
-      }
-      // Activation/désactivation du snapping avec symbole d'aimant
-      if (e.target.id === "btnSnap") {
-        this.snapOn = !this.snapOn;
-        e.target.textContent = this.snapOn ? "🧲" : "🧲 Off";
-      }
-      // Réorganisation des couches
-      if (e.target.id === "btnBringToFront") {
-        if (this.wb.selectedShape) {
-          this.wb.bringToFront(this.wb.selectedShape);
-        }
-      }
-      if (e.target.id === "btnSendToBack") {
-        if (this.wb.selectedShape) {
-          this.wb.sendToBack(this.wb.selectedShape);
-        }
-      }
-      if (e.target.id === "btnMoveUp") {
-        if (this.wb.selectedShape) {
-          this.wb.moveUp(this.wb.selectedShape);
-        }
-      }
-      if (e.target.id === "btnMoveDown") {
-        if (this.wb.selectedShape) {
-          this.wb.moveDown(this.wb.selectedShape);
-        }
-      }
-      // Export PNG / JSON
-      if (e.target.id === "btnExportPng") {
-        this.wb.exportPNG();
-      }
-      if (e.target.id === "btnExportJson") {
-        this.wb.exportJSON();
-      }
-      // Import JSON
-      if (e.target.id === "btnImportJson") {
-        this.fileImportJson.click();
+      const btn = e.target.closest("button");
+      if (!btn) return;
+      switch (btn.id) {
+        case "btnUndo":
+          this.history.undo();
+          break;
+        case "btnRedo":
+          this.history.redo();
+          break;
+        case "btnSnap":
+          this.snapOn = !this.snapOn;
+          btn.textContent = this.snapOn ? "🧲" : "🧲 Off";
+          break;
+        case "btnBringToFront":
+          if (this.wb.selectedShape) {
+            this.wb.bringToFront(this.wb.selectedShape);
+          }
+          break;
+        case "btnSendToBack":
+          if (this.wb.selectedShape) {
+            this.wb.sendToBack(this.wb.selectedShape);
+          }
+          break;
+        case "btnMoveUp":
+          if (this.wb.selectedShape) {
+            this.wb.moveUp(this.wb.selectedShape);
+          }
+          break;
+        case "btnMoveDown":
+          if (this.wb.selectedShape) {
+            this.wb.moveDown(this.wb.selectedShape);
+          }
+          break;
+        case "btnExportPng":
+          this.wb.exportPNG();
+          break;
+        case "btnExportJson":
+          this.wb.exportJSON();
+          break;
+        case "btnImportJson":
+          this.fileImportJson.click();
+          break;
+        default:
+          break;
       }
     });
 
