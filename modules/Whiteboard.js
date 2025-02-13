@@ -13,7 +13,7 @@ import {
 =================================================== */
 function reconstructShape(shapeData) {
   let shape;
-  switch(shapeData.type) {
+  switch (shapeData.type) {
     case "rect":
       shape = new ShapeRect(
         shapeData.x,
@@ -180,6 +180,9 @@ export default class Whiteboard {
     if (e.touches && e.touches.length > 0) {
       clientX = e.touches[0].clientX;
       clientY = e.touches[0].clientY;
+    } else if (e.changedTouches && e.changedTouches.length > 0) {
+      clientX = e.changedTouches[0].clientX;
+      clientY = e.changedTouches[0].clientY;
     } else {
       clientX = e.clientX;
       clientY = e.clientY;
