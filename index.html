@@ -2,9 +2,15 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <!-- Pour que la mise en page s'adapte correctement aux différents écrans -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Whiteboard Complet - Texte Multiligne avec TextEditor</title>
   <link rel="stylesheet" href="style.css" />
   <style>
+    /* Assurer que html et body occupent toute la hauteur */
+    html, body {
+      height: 100%;
+    }
     /* ======================== */
     /* Styles de base          */
     /* ======================== */
@@ -171,7 +177,7 @@
       <button id="btnMoveUp">Up</button>
       <button id="btnMoveDown">Down</button>
     </div>
-    <!-- Groupe Export/Import : Export PNG, Export JSON (disquette) et Import JSON -->
+    <!-- Groupe Export/Import : Export PNG, Export JSON et Import JSON -->
     <div class="tool-group" id="export-group">
       <button id="btnExportPng">PNG</button>
       <button id="btnExportJson">💾</button>
@@ -192,6 +198,8 @@
       <button data-tool="text">Texte</button>
       <button data-tool="image">Image (Drop)</button>
       <button data-tool="hand">Main</button>
+      <!-- Bouton pour l'outil gomme -->
+      <button data-tool="eraser">Gomme</button>
     </div>
 
     <!-- Groupe 2 : Zoom -->

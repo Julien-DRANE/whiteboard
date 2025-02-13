@@ -2,6 +2,7 @@ import Whiteboard from "./modules/Whiteboard.js";
 import { HistoryManager } from "./modules/History.js";
 import TextEditor from "./modules/TextEditor.js";
 import { ShapeText } from "./modules/Shapes.js";
+import { EraserTool } from "./modules/Tools.js"; // Import de l'outil gomme
 
 // Initialisation des modules principaux
 const wb = new Whiteboard("whiteboard");
@@ -56,37 +57,44 @@ document.getElementById("pageInfo").textContent =
    ============================================ */
 toolbarHorizontal.addEventListener("click", (e) => {
   if (e.target.dataset.tool) {
-    wb.currentTool = e.target.dataset.tool;
-    if (wb.currentTool === "text") {
-      // Affiche le TextEditor quand l'outil texte est sélectionné.
-      textEditor.show({
-        x: 100,
-        y: 100,
-        width: 400,
-        height: 200,
-        fontSize: 18,
-        text: "",
-        onValidate: (validatedText) => {
-          console.log("Texte validé :", validatedText);
-          // Crée une nouvelle forme texte
-          const shapeX = 100 + 400 / 2;
-          const shapeY = 100 + 200 / 2;
-          let newTextShape = new ShapeText(shapeX, shapeY, 0, 0, 0, strokeColorPicker.value, validatedText, 18);
-          newTextShape.setText(validatedText, wb.ctx);
-          wb.shapes.push(newTextShape);
-          wb.drawAll();
-        }
-      });
-      wb.canvas.style.cursor = "text";
-    } else if (wb.currentTool === "image") {
-      wb.canvas.style.cursor = "copy";
-      if (fileImage) {
-        fileImage.click();
-      }
+    const selectedTool = e.target.dataset.tool;
+    // Si l'outil gomme est sélectionné, on instancie EraserTool
+    if (selectedTool === "eraser") {
+      wb.setTool(new EraserTool(wb));
+      wb.canvas.style.cursor = "pointer"; // Utilisation d'un curseur pointer pour l'outil gomme
     } else {
-      wb.canvas.style.cursor =
-        (wb.currentTool === "hand") ? "move" :
-        (wb.currentTool === "select") ? "default" : "crosshair";
+      wb.currentTool = selectedTool;
+      if (wb.currentTool === "text") {
+        // Affiche le TextEditor quand l'outil texte est sélectionné.
+        textEditor.show({
+          x: 100,
+          y: 100,
+          width: 400,
+          height: 200,
+          fontSize: 18,
+          text: "",
+          onValidate: (validatedText) => {
+            console.log("Texte validé :", validatedText);
+            // Crée une nouvelle forme texte
+            const shapeX = 100 + 400 / 2;
+            const shapeY = 100 + 200 / 2;
+            let newTextShape = new ShapeText(shapeX, shapeY, 0, 0, 0, strokeColorPicker.value, validatedText, 18);
+            newTextShape.setText(validatedText, wb.ctx);
+            wb.shapes.push(newTextShape);
+            wb.drawAll();
+          }
+        });
+        wb.canvas.style.cursor = "text";
+      } else if (wb.currentTool === "image") {
+        wb.canvas.style.cursor = "copy";
+        if (fileImage) {
+          fileImage.click();
+        }
+      } else {
+        wb.canvas.style.cursor =
+          (wb.currentTool === "hand") ? "move" :
+          (wb.currentTool === "select") ? "default" : "crosshair";
+      }
     }
   }
   if (e.target.id === "btnPagePrev") {

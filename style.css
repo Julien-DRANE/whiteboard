@@ -94,12 +94,12 @@ html, body {
 /* Nouveau jeu de couleurs pour les boutons selon le groupe */
 /* Vous pouvez modifier ces codes couleurs pour obtenir l'effet souhaité */
 #tools-group button      { background: #42A5F5; }  /* Bleu clair */
-#zoom-group button       { background: #66BB6A; }  /* Vert moyen */
+#zoom-group button       { background: #61d567; }  /* Vert moyen */
 #colors-group button     { background: #FF7043; }  /* Orange vif */
 #actions-group button    { background: #EF5350; }  /* Rouge doux */
 #pages-group button      { background: #5C6BC0; }  /* Indigo doux */
 #export-import-group button { background: #26A69A; } /* Teal frais */
-#layer-group button      { background: #AB47BC; }  /* Violet doux */
+#layer-group button      { background: #47bc66; }  /* Violet doux */
 
 /* ======================== */
 /* Labels et Inputs         */
