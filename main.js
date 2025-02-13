@@ -57,11 +57,16 @@ document.getElementById("pageInfo").textContent =
    ============================================ */
 toolbarHorizontal.addEventListener("click", (e) => {
   if (e.target.dataset.tool) {
+    // Gestion de l'état actif : retirer "active" de tous les boutons d'outil
+    const toolButtons = toolbarHorizontal.querySelectorAll("button[data-tool]");
+    toolButtons.forEach(btn => btn.classList.remove("active"));
+    // Ajouter la classe active au bouton cliqué
+    e.target.classList.add("active");
+
     const selectedTool = e.target.dataset.tool;
-    // Si l'outil gomme est sélectionné, on instancie EraserTool
     if (selectedTool === "eraser") {
       wb.setTool(new EraserTool(wb));
-      wb.canvas.style.cursor = "pointer"; // Utilisation d'un curseur pointer pour l'outil gomme
+      wb.canvas.style.cursor = "pointer"; // Curseur adapté pour la gomme
     } else {
       wb.currentTool = selectedTool;
       if (wb.currentTool === "text") {
@@ -246,7 +251,6 @@ wb.canvas.addEventListener("touchmove", (e) => {
 wb.canvas.addEventListener("touchend", (e) => {
   e.preventDefault();
   if (textEditor.container.style.display !== "none") return;
-  // Utilisation de changedTouches pour récupérer la dernière position lors du touchend
   const touch = e.changedTouches[0];
   const rect = wb.canvas.getBoundingClientRect();
   const pos = {
