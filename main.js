@@ -59,7 +59,6 @@ toolbarHorizontal.addEventListener("click", (e) => {
     wb.currentTool = e.target.dataset.tool;
     if (wb.currentTool === "text") {
       // Affiche le TextEditor quand l'outil texte est sélectionné.
-      // Les valeurs (x, y, width, height, fontSize) sont par défaut et peuvent être ajustées.
       textEditor.show({
         x: 100,
         y: 100,
@@ -69,17 +68,12 @@ toolbarHorizontal.addEventListener("click", (e) => {
         text: "",
         onValidate: (validatedText) => {
           console.log("Texte validé :", validatedText);
-          // Crée une nouvelle forme texte à partir des paramètres du TextEditor.
-          // Ici, on calcule le centre du nouveau cadre à partir de la position et des dimensions utilisées.
-          const shapeX = 100 + 400 / 2; // par exemple
-          const shapeY = 100 + 200 / 2; // par exemple
-          // Créer l'instance de ShapeText avec le texte validé et la couleur sélectionnée (ou par défaut)
+          // Crée une nouvelle forme texte
+          const shapeX = 100 + 400 / 2;
+          const shapeY = 100 + 200 / 2;
           let newTextShape = new ShapeText(shapeX, shapeY, 0, 0, 0, strokeColorPicker.value, validatedText, 18);
-          // Utiliser la méthode setText pour recalculer la largeur et la hauteur en fonction du texte
           newTextShape.setText(validatedText, wb.ctx);
-          // Ajouter la nouvelle forme au whiteboard
           wb.shapes.push(newTextShape);
-          // Redessiner le whiteboard
           wb.drawAll();
         }
       });
@@ -109,7 +103,7 @@ toolbarHorizontal.addEventListener("click", (e) => {
 
 /* ============================================
    Gestion des clics sur la barre verticale
-   (Actions : Undo/Redo, snapping, réorganisation des couches, export/import)
+   (Undo/Redo, snapping, réorganisation, export/import)
    ============================================ */
 toolbarVertical.addEventListener("click", (e) => {
   const btn = e.target.closest("button");
@@ -244,7 +238,13 @@ wb.canvas.addEventListener("touchmove", (e) => {
 wb.canvas.addEventListener("touchend", (e) => {
   e.preventDefault();
   if (textEditor.container.style.display !== "none") return;
-  let pos = wb.selectRectCurrent || { x: 0, y: 0 };
+  // Utilisation de changedTouches pour récupérer la dernière position lors du touchend
+  const touch = e.changedTouches[0];
+  const rect = wb.canvas.getBoundingClientRect();
+  const pos = {
+    x: (touch.clientX - rect.left - wb.panOffsetX) / wb.zoomLevel,
+    y: (touch.clientY - rect.top - wb.panOffsetY) / wb.zoomLevel
+  };
   wb.handleMouseUp(pos, snapping);
   history.saveState();
 });
