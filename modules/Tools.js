@@ -1,6 +1,4 @@
-// Exemple d'implémentation basique de différents outils.
-// À adapter ou compléter selon la logique de votre Whiteboard.
-
+// Outils de base pour le whiteboard
 import { ShapeRect, ShapeEllipse, ShapeText, ShapePath, ShapeArrow, ShapeImage } from "./Shapes.js";
 
 export class BaseTool {
@@ -42,7 +40,7 @@ export class PencilTool extends BaseTool {
   onMouseUp(pos, e) {
     this.isDrawing = false;
     this.wb.ctx.closePath();
-    //setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10); // Retour à l'outil sélection
+    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10); // Retour à l'outil sélection
   }
 }
 
@@ -64,7 +62,6 @@ export class RectTool extends BaseTool {
   onMouseUp(pos, e) {
     this.isDrawing = false;
     this.wb.shapes.push(this.tempRect);
-    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10);
     setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10); // Retour à l'outil sélection
   }
 }
@@ -100,17 +97,32 @@ export class ArrowTool extends BaseTool {
   onMouseMove(pos, e) {
     if (!this.isDrawing) return;
     this.wb.drawAll();
-    const previewArrow = ShapeArrow.fromPoints(this.startX, this.startY, pos.x, pos.y, this.wb.color, 2);
+    const previewArrow = ShapeArrow.fromPoints(
+      this.startX,
+      this.startY,
+      pos.x,
+      pos.y,
+      this.wb.color,
+      2
+    );
     previewArrow.draw(this.wb.ctx);
   }
   onMouseUp(pos, e) {
     if (!this.isDrawing) return;
     this.isDrawing = false;
-    const finalArrow = ShapeArrow.fromPoints(this.startX, this.startY, pos.x, pos.y, this.wb.color, 2);
-    this.wb.shapes.push(this.tempRect);
-    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10);
-    this.wb.drawAll();
+    const finalArrow = ShapeArrow.fromPoints(
+      this.startX,
+      this.startY,
+      pos.x,
+      pos.y,
+      this.wb.color,
+      2
+    );
+    // Correction : on ajoute bien la flèche finale et non une variable inexistante
+    this.wb.shapes.push(finalArrow);
     setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10); // Retour à l'outil sélection
+    this.wb.drawAll();
+    setTimeout(() => this.wb.setTool(new SelectTool(this.wb)), 10);
   }
 }
 
